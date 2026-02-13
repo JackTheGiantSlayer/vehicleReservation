@@ -3,7 +3,7 @@ services:
     image: postgres:15
     environment:
       POSTGRES_USER: user
-      POSTGRES_PASSWORD: VehicRes@2026_P@ss!_Secure
+      POSTGRES_PASSWORD: VehicRes_2026_Pass!_Secure
       POSTGRES_DB: carbooking
     volumes:
       - postgres_data:/var/lib/postgresql/data
@@ -12,6 +12,8 @@ services:
       interval: 5s
       timeout: 5s
       retries: 5
+    ports:
+      - "5432:5432"
 
   backend:
     build: ./backend
@@ -21,7 +23,7 @@ services:
       db:
         condition: service_healthy
     environment:
-      DATABASE_URL: postgresql://user:VehicRes@2026_P@ss!_Secure@db:5432/carbooking
+      DATABASE_URL: postgresql://user:VehicRes_2026_Pass!_Secure@db:5432/carbooking
       SECRET_KEY: dev_secret_key
       FLASK_APP: app.py
       FLASK_ENV: development
