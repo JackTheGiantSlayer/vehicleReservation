@@ -16,5 +16,13 @@ description: How to deploy the application to a production server
 ```bash
 docker-compose up --build -d
 ```
-5. Setup Nginx as a reverse proxy for SSL/HTTPS.
-6. Verify the application is accessible via the domain.
+5. Initialize the database (Required for first-time setup):
+// turbo
+```bash
+# Run migrations to create tables
+docker-compose exec backend flask db upgrade
+# Run seed script to add default admin and settings
+docker-compose exec backend python seed.py
+```
+6. Setup Nginx as a reverse proxy for SSL/HTTPS.
+7. Verify the application is accessible via the domain.

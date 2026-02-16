@@ -1,7 +1,8 @@
 import React, { useState, useContext } from 'react';
 import { Form, Input, Button, Card, message, Typography, Modal } from 'antd';
 import { UserOutlined, LockOutlined, PhoneOutlined, CarOutlined } from '@ant-design/icons';
-import { useNavigate, Link } from 'react-router-dom';
+import { useNavigate, Link, useSearchParams } from 'react-router-dom';
+import { useEffect } from 'react';
 import { AuthContext } from '../context/AuthContext';
 import AuthService from '../services/auth.service';
 
@@ -14,7 +15,14 @@ const Login = () => {
 
     const { login } = useContext(AuthContext);
     const navigate = useNavigate();
+    const [searchParams] = useSearchParams();
     const [forgotForm] = Form.useForm();
+
+    useEffect(() => {
+        if (searchParams.get('expired')) {
+            message.warning('Your session has expired. Please login again.');
+        }
+    }, [searchParams]);
 
     const onFinish = async (values) => {
         setLoading(true);
