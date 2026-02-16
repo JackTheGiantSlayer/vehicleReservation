@@ -2,6 +2,7 @@ import smtplib
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
 from app.models import Setting
+from flask import current_app
 import threading
 
 class EmailService:
@@ -11,12 +12,13 @@ class EmailService:
         return setting.value if setting else default
 
     @staticmethod
-    def send_email_sync(recipient, subject, body):
-        smtp_host = EmailService.get_setting('smtp_host')
-        smtp_port = EmailService.get_setting('smtp_port')
-        smtp_user = EmailService.get_setting('smtp_user')
-        smtp_pass = EmailService.get_setting('smtp_pass')
-        smtp_enable = EmailService.get_setting('email_notifications_enabled') == 'true'
+    def send_email_sync(app, recipient, subject, body):
+        with app.app_context():
+            smtp_host = EmailService.get_setting('smtp_host')
+            smtp_port = EmailService.get_setting('smtp_port')
+            smtp_user = EmailService.get_setting('smtp_user')
+            smtp_pass = EmailService.get_setting('smtp_pass')
+            smtp_enable = EmailService.get_setting('email_notifications_enabled') == 'true'
 
         if not smtp_enable or not all([smtp_host, smtp_port, smtp_user, smtp_pass]):
             print("Email notifications disabled or SMTP not configured.")
@@ -41,7 +43,9 @@ class EmailService:
     @staticmethod
     def send_email(recipient, subject, body):
         # Sending email in a separate thread to avoid blocking the API response
-        thread = threading.Thread(target=EmailService.send_email_sync, args=(recipient, subject, body))
+        # Need to pass the current_app object to the thread to access app context
+        app = current_app._get_current_object()
+        thread = threading.Thread(target=EmailService.send_email_sync, args=(app, recipient, subject, body))
         thread.start()
 
     @staticmethod
