@@ -36,10 +36,10 @@ def create_booking(current_user):
         if car.status == 'maintenance':
              return jsonify({'message': 'Car is under maintenance'}), 400
     
-    # Check for overlapping approved bookings
+    # Check for overlapping active bookings (pending, approved, picked_up)
     overlapping_booking = Booking.query.filter(
         Booking.car_id == car.id,
-        Booking.status == 'approved',
+        Booking.status.in_(['pending', 'approved', 'picked_up']),
         Booking.start_time < end_time,
         Booking.end_time > start_time
     ).first()
@@ -91,14 +91,14 @@ def get_bookings(current_user):
             'car_id': b.car_id,
             'car_license': car.license_plate if car else 'Unknown',
             'car_model': f"{car.brand} {car.model}" if car else 'Unknown',
-            'start_time': b.start_time.isoformat(),
-            'end_time': b.end_time.isoformat(),
+            'start_time': b.start_time.isoformat() + 'Z',
+            'end_time': b.end_time.isoformat() + 'Z',
             'objective': b.objective,
             'destination': b.destination,
             'status': b.status,
             'start_mileage': b.start_mileage,
             'end_mileage': b.end_mileage,
-            'created_at': b.created_at.isoformat()
+            'created_at': b.created_at.isoformat() + 'Z'
         })
         
     return jsonify({'bookings': output}), 200
@@ -126,6 +126,13 @@ def update_booking_status(current_user, id):
     # Let's keep car status as 'available' but rely on bookings table for availability.
     
     db.session.commit()
+    
+    # Notify user of status update
+    from app.services.email_service import EmailService
+    user = User.query.get(booking.user_id)
+    car = Car.query.get(booking.car_id)
+    EmailService.notify_booking_status(booking, user, car)
+    
     return jsonify({'message': f'Booking {new_status}'}), 200
 
 @bp.route('/available-cars', methods=['GET'])
@@ -143,10 +150,10 @@ def get_available_cars(current_user):
     except ValueError:
         return jsonify({'message': 'Invalid date format'}), 400
         
-    # Find cars that have NO approved bookings overlapping with the requested time
+    # Find cars that have NO active bookings (pending, approved, picked_up) overlapping with the requested time
     # Subquery for booked car IDs in that time range
     booked_car_ids = db.session.query(Booking.car_id).filter(
-        Booking.status == 'approved',
+        Booking.status.in_(['pending', 'approved', 'picked_up']),
         Booking.start_time < end_time,
         Booking.end_time > start_time
     ).subquery()
@@ -227,6 +234,11 @@ def return_car(current_user, id):
     car.current_mileage = end_mileage
     
     db.session.commit()
+
+    # Notify user of completion
+    from app.services.email_service import EmailService
+    user = User.query.get(booking.user_id)
+    EmailService.notify_booking_status(booking, user, car)
 
     # Check for maintenance
     from app.services.notification_service import NotificationService

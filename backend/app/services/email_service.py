@@ -12,7 +12,7 @@ class EmailService:
         return setting.value if setting else default
 
     @staticmethod
-    def send_email_sync(app, recipient, subject, body):
+    def send_email_sync(app, recipient, subject, body, cc=None):
         with app.app_context():
             smtp_host = EmailService.get_setting('smtp_host')
             smtp_port = EmailService.get_setting('smtp_port')
@@ -28,24 +28,30 @@ class EmailService:
             msg = MIMEMultipart()
             msg['From'] = smtp_user
             msg['To'] = recipient
+            if cc:
+                msg['Cc'] = cc
             msg['Subject'] = subject
             msg.attach(MIMEText(body, 'html'))
+
+            destinations = [recipient]
+            if cc:
+                destinations.append(cc)
 
             server = smtplib.SMTP(smtp_host, int(smtp_port))
             server.starttls()
             server.login(smtp_user, smtp_pass)
             server.send_message(msg)
             server.quit()
-            print(f"Email sent to {recipient}")
+            print(f"Email sent to {recipient} (CC: {cc})")
         except Exception as e:
             print(f"Error sending email: {e}")
 
     @staticmethod
-    def send_email(recipient, subject, body):
+    def send_email(recipient, subject, body, cc=None):
         # Sending email in a separate thread to avoid blocking the API response
         # Need to pass the current_app object to the thread to access app context
         app = current_app._get_current_object()
-        thread = threading.Thread(target=EmailService.send_email_sync, args=(app, recipient, subject, body))
+        thread = threading.Thread(target=EmailService.send_email_sync, args=(app, recipient, subject, body, cc))
         thread.start()
 
     @staticmethod
@@ -124,6 +130,44 @@ class EmailService:
         <p>If you did not request this, please contact the administrator.</p>
         """
         EmailService.send_email(recipient, subject, body)
+
+    @staticmethod
+    def notify_booking_status(booking, user, car):
+        cc_email = EmailService.get_setting('admin_email')
+        
+        status_titles = {
+            'approved': 'Approved',
+            'rejected': 'Rejected',
+            'cancelled': 'Cancelled',
+            'completed': 'Completed'
+        }
+        
+        status_title = status_titles.get(booking.status, booking.status.capitalize())
+        
+        subject = f"Booking {status_title}: {car.brand} {car.model}"
+        
+        status_messages = {
+            'approved': "Your vehicle reservation has been <strong>approved</strong>.",
+            'rejected': "Your vehicle reservation has been <strong>rejected</strong>.",
+            'cancelled': "Your vehicle reservation has been <strong>cancelled</strong>.",
+            'completed': "Your vehicle reservation has been marked as <strong>completed</strong>. Thank you!"
+        }
+        
+        status_message = status_messages.get(booking.status, f"Your booking status has been updated to: {booking.status}")
+
+        body = f"""
+        <h3>Booking Status Update</h3>
+        <p>Hello {user.full_name},</p>
+        <p>{status_message}</p>
+        <ul>
+            <li><strong>Booking ID:</strong> {booking.id}</li>
+            <li><strong>Vehicle:</strong> {car.brand} {car.model} ({car.license_plate})</li>
+            <li><strong>Period:</strong> {booking.start_time.strftime('%Y-%m-%d %H:%M')} - {booking.end_time.strftime('%Y-%m-%d %H:%M')}</li>
+            <li><strong>Status:</strong> {status_title}</li>
+        </ul>
+        <p>Please log in to the system for more details.</p>
+        """
+        EmailService.send_email(user.email, subject, body, cc=cc_email)
 
     @staticmethod
     def send_test_email(recipient, custom_settings=None):

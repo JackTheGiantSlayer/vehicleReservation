@@ -175,7 +175,7 @@ const DashboardHome = () => {
                                 description={
                                     <>
                                         <div><Text strong>Destination:</Text> {item.destination}</div>
-                                        <div><Text strong>Time:</Text> {dayjs(item.start_time).format('HH:mm')} - {dayjs(item.end_time).format('HH:mm')}</div>
+                                        <div><Text strong>Time:</Text> {dayjs(item.start_time).toDate().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: false })} - {dayjs(item.end_time).toDate().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: false })}</div>
                                         <div style={{ marginTop: 8 }}>
                                             <Tag color={item.status === 'completed' ? 'green' : (item.status === 'approved' ? 'blue' : 'orange')}>
                                                 {item.status.toUpperCase()}
