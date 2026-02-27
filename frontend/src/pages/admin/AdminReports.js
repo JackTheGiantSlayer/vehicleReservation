@@ -1,28 +1,39 @@
 import React, { useState, useEffect } from 'react';
-import { Card, Row, Col, Statistic, Table, Typography, Spin, message } from 'antd';
+import { Card, Row, Col, Statistic, Table, Typography, Spin, message, DatePicker, Button, Space } from 'antd';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, LineChart, Line } from 'recharts';
+import { DownloadOutlined, UserOutlined, CarOutlined, DashboardOutlined } from '@ant-design/icons';
 import ReportService from '../../services/report.service';
-import BookingService from '../../services/booking.service';
 import moment from 'moment';
-import { Button, Space } from 'antd';
-import { DownloadOutlined } from '@ant-design/icons';
 import ExportService from '../../services/export.service';
 
-const { Title } = Typography;
+const { Title, Text } = Typography;
+const { RangePicker } = DatePicker;
 
 const AdminReports = () => {
-    const [stats, setStats] = useState(null);
-    const [bookings, setBookings] = useState([]);
+    const [basicStats, setBasicStats] = useState(null);
+    const [advancedStats, setAdvancedStats] = useState(null);
     const [loading, setLoading] = useState(true);
+    const [dateRange, setDateRange] = useState([null, null]);
 
-    const fetchData = async () => {
+    const fetchBasicData = async () => {
         try {
-            const [statsRes, bookingsRes] = await Promise.all([
-                ReportService.getStats(),
-                BookingService.getBookings({ all: true }) // Reuse existing API to get full list
-            ]);
-            setStats(statsRes.data);
-            setBookings(bookingsRes.data.bookings);
+            const res = await ReportService.getStats();
+            setBasicStats(res.data);
+        } catch (error) {
+            console.error("Failed to fetch basic stats", error);
+        }
+    };
+
+    const fetchAdvancedData = async (dates) => {
+        setLoading(true);
+        try {
+            const params = {};
+            if (dates && dates[0] && dates[1]) {
+                params.start_date = dates[0].startOf('day').toISOString();
+                params.end_date = dates[1].endOf('day').toISOString();
+            }
+            const res = await ReportService.getAdvancedStats(params);
+            setAdvancedStats(res.data);
         } catch (error) {
             message.error("Failed to fetch report data");
         } finally {
@@ -31,163 +42,183 @@ const AdminReports = () => {
     };
 
     useEffect(() => {
-        fetchData();
+        fetchBasicData();
+        fetchAdvancedData(null);
     }, []);
 
-    const handleExportCSV = () => {
-        // Prepare data for CSV with calculated fields
-        const csvData = bookings.map(b => ({
-            ID: b.id,
-            User: b.user_name,
-            Car: b.car_model,
-            License: b.car_license,
-            Date: b.start_time ? moment(b.start_time).format('YYYY-MM-DD') : '',
-            'Start (km)': b.start_mileage ?? '-',
-            'End (km)': b.end_mileage ?? '-',
-            'Distance (km)': (b.end_mileage && b.start_mileage) ? b.end_mileage - b.start_mileage : '-',
-            Destination: b.destination,
-            Status: b.status ? b.status.toUpperCase() : ''
-        }));
-        ExportService.exportToCSV(csvData, 'bookings_report.csv');
+    const handleDateChange = (dates) => {
+        setDateRange(dates);
+        fetchAdvancedData(dates);
     };
 
     const handleExportPDF = () => {
+        if (!advancedStats || !advancedStats.bookings) return;
+
         const pdfColumns = [
-            { title: 'ID', dataIndex: 'id' },
-            { title: 'User', dataIndex: 'user_name' },
-            { title: 'Car', dataIndex: 'car_model' },
-            { title: 'Date', dataIndex: 'start_date' },
-            { title: 'Start', dataIndex: 'start_mileage' },
-            { title: 'End', dataIndex: 'end_mileage' },
-            { title: 'Dist', dataIndex: 'dist' },
-            { title: 'Status', dataIndex: 'status' }
+            { title: 'Date', dataIndex: 'start_time' },
+            { title: 'User', dataIndex: 'user' },
+            { title: 'Vehicle', dataIndex: 'car' },
+            { title: 'Status', dataIndex: 'status' },
+            { title: 'Mileage (km)', dataIndex: 'mileage' }
         ];
 
-        const pdfData = bookings.map(b => ({
+        const pdfData = advancedStats.bookings.map(b => ({
             ...b,
-            start_date: b.start_time ? moment(b.start_time).format('YYYY-MM-DD') : '',
-            status: b.status ? b.status.toUpperCase() : '',
-            dist: (b.end_mileage && b.start_mileage) ? b.end_mileage - b.start_mileage : '-'
+            status: b.status.toUpperCase(),
         }));
 
-        ExportService.exportToPDF(pdfColumns, pdfData, 'bookings_report.pdf');
-    };
+        const filename = dateRange[0] && dateRange[1]
+            ? `report_${dateRange[0].format('YYYYMMDD')}_${dateRange[1].format('YYYYMMDD')}.pdf`
+            : 'vehicle_report.pdf';
 
-    // Helper to get unique values for filters
-    const getUniqueFilters = (key) => {
-        const unique = [...new Set(bookings.map(item => item[key]))];
-        return unique.filter(Boolean).map(val => ({ text: val.toString(), value: val }));
+        ExportService.exportToPDF(pdfColumns, pdfData, filename);
     };
 
     const columns = [
-        { title: 'ID', dataIndex: 'id', key: 'id', sorter: (a, b) => a.id - b.id },
-        {
-            title: 'User',
-            dataIndex: 'user_name',
-            key: 'user_name',
-            filters: getUniqueFilters('user_name'),
-            onFilter: (value, record) => record.user_name.indexOf(value) === 0,
-        },
-        {
-            title: 'Car',
-            dataIndex: 'car_model',
-            key: 'car_model',
-            filters: getUniqueFilters('car_model'),
-            onFilter: (value, record) => record.car_model.indexOf(value) === 0,
-        },
         {
             title: 'Date',
-            key: 'date',
-            render: (_, record) => moment(record.start_time).format('YYYY-MM-DD'),
+            dataIndex: 'start_time',
+            key: 'start_time',
             sorter: (a, b) => moment(a.start_time).unix() - moment(b.start_time).unix(),
         },
-        { title: 'Start (km)', dataIndex: 'start_mileage', key: 'start_mileage' },
-        { title: 'End (km)', dataIndex: 'end_mileage', key: 'end_mileage' },
+        { title: 'User', dataIndex: 'user', key: 'user' },
+        { title: 'Vehicle', dataIndex: 'car', key: 'car' },
         {
-            title: 'Distance',
-            key: 'distance',
-            render: (_, record) => (record.end_mileage && record.start_mileage) ? record.end_mileage - record.start_mileage : '-'
+            title: 'Mileage',
+            dataIndex: 'mileage',
+            key: 'mileage',
+            render: val => val > 0 ? `${val} km` : '-'
         },
-        { title: 'Destination', dataIndex: 'destination', key: 'destination' },
         {
             title: 'Status',
             dataIndex: 'status',
             key: 'status',
-            filters: getUniqueFilters('status'),
-            onFilter: (value, record) => record.status.indexOf(value) === 0,
             render: status => status.toUpperCase()
         }
     ];
 
-    if (loading) return <Spin size="large" style={{ display: 'block', margin: 'auto', marginTop: 50 }} />;
-
     return (
-        <div>
-            <Title level={2}>Admin Reports</Title>
-
-            <Row gutter={[16, 16]} style={{ marginBottom: 24 }}>
-                <Col xs={12} sm={8}>
-                    <Card bordered={false} style={{ borderRadius: '12px', boxShadow: '0 2px 8px rgba(0,0,0,0.05)' }}>
-                        <Statistic title="Total Cars" value={stats?.total_cars} valueStyle={{ fontWeight: 700 }} />
-                    </Card>
+        <div style={{ padding: '24px' }}>
+            <Row justify="space-between" align="middle" style={{ marginBottom: 24 }}>
+                <Col>
+                    <Title level={2} style={{ margin: 0 }}>Advanced Reports</Title>
                 </Col>
-                <Col xs={12} sm={8}>
-                    <Card bordered={false} style={{ borderRadius: '12px', boxShadow: '0 2px 8px rgba(0,0,0,0.05)' }}>
-                        <Statistic title="Total Bookings" value={stats?.total_bookings} valueStyle={{ fontWeight: 700 }} />
-                    </Card>
-                </Col>
-            </Row>
-
-            <Row gutter={[24, 24]} style={{ marginBottom: 24 }}>
-                <Col xs={24} lg={12}>
-                    <Card title="Bookings per Car" bordered={false} style={{ borderRadius: '12px', boxShadow: '0 2px 8px rgba(0,0,0,0.05)' }}>
-                        <ResponsiveContainer width="100%" height={300}>
-                            <BarChart data={stats?.cars_stats}>
-                                <CartesianGrid strokeDasharray="3 3" vertical={false} />
-                                <XAxis dataKey="name" interval={0} fontSize={10} />
-                                <YAxis allowDecimals={false} />
-                                <Tooltip cursor={{ fill: 'transparent' }} />
-                                <Legend />
-                                <Bar dataKey="bookings" fill="#4f46e5" name="Bookings" radius={[4, 4, 0, 0]} />
-                            </BarChart>
-                        </ResponsiveContainer>
-                    </Card>
-                </Col>
-                <Col xs={24} lg={12}>
-                    <Card title="Monthly Usage" bordered={false} style={{ borderRadius: '12px', boxShadow: '0 2px 8px rgba(0,0,0,0.05)' }}>
-                        <ResponsiveContainer width="100%" height={300}>
-                            <LineChart data={stats?.monthly_stats}>
-                                <CartesianGrid strokeDasharray="3 3" vertical={false} />
-                                <XAxis dataKey="month" />
-                                <YAxis allowDecimals={false} />
-                                <Tooltip />
-                                <Legend />
-                                <Line type="monotone" dataKey="bookings" stroke="#10b981" strokeWidth={2} name="Bookings" dot={{ r: 4 }} activeDot={{ r: 6 }} />
-                            </LineChart>
-                        </ResponsiveContainer>
-                    </Card>
-                </Col>
-            </Row>
-
-            <Card
-                title="Recent Bookings"
-                bordered={false}
-                style={{ borderRadius: '12px', boxShadow: '0 2px 8px rgba(0,0,0,0.05)' }}
-                extra={
-                    <Space wrap>
-                        <Button icon={<DownloadOutlined />} onClick={handleExportCSV}>CSV</Button>
-                        <Button type="primary" icon={<DownloadOutlined />} onClick={handleExportPDF}>PDF</Button>
+                <Col>
+                    <Space size="middle">
+                        <RangePicker
+                            onChange={handleDateChange}
+                            style={{ borderRadius: '8px' }}
+                        />
+                        <Button
+                            type="primary"
+                            icon={<DownloadOutlined />}
+                            onClick={handleExportPDF}
+                            disabled={!advancedStats}
+                        >
+                            Export PDF
+                        </Button>
                     </Space>
-                }
-            >
-                <Table
-                    dataSource={bookings}
-                    columns={columns}
-                    rowKey="id"
-                    pagination={{ pageSize: 5 }}
-                    scroll={{ x: true }}
-                />
-            </Card>
+                </Col>
+            </Row>
+
+            {/* Overall Stats Cards */}
+            <Row gutter={[16, 16]} style={{ marginBottom: 24 }}>
+                <Col xs={24} sm={12} md={6}>
+                    <Card bordered={false} style={{ borderRadius: '12px', boxShadow: '0 2px 8px rgba(0,0,0,0.05)' }}>
+                        <Statistic
+                            title="Total Mileage"
+                            value={advancedStats?.summary.total_mileage || 0}
+                            suffix="km"
+                            prefix={<DashboardOutlined style={{ marginRight: 8, color: '#4f46e5' }} />}
+                            valueStyle={{ fontWeight: 700, color: '#4f46e5' }}
+                        />
+                    </Card>
+                </Col>
+                <Col xs={24} sm={12} md={6}>
+                    <Card bordered={false} style={{ borderRadius: '12px', boxShadow: '0 2px 8px rgba(0,0,0,0.05)' }}>
+                        <Statistic
+                            title="Total Bookings"
+                            value={advancedStats?.summary.total_bookings || 0}
+                            valueStyle={{ fontWeight: 700 }}
+                        />
+                    </Card>
+                </Col>
+                <Col xs={24} sm={12} md={6}>
+                    <Card bordered={false} style={{ borderRadius: '12px', boxShadow: '0 2px 8px rgba(0,0,0,0.05)' }}>
+                        <Text type="secondary" style={{ fontSize: '14px' }}>Top User</Text>
+                        <div style={{ marginTop: 8 }}>
+                            <Space align="start">
+                                <UserOutlined style={{ fontSize: '20px', color: '#10b981', marginTop: 4 }} />
+                                <div>
+                                    <div style={{ fontWeight: 700, fontSize: '18px' }}>{advancedStats?.summary.top_user?.name || '-'}</div>
+                                    <Text type="secondary" size="small">{advancedStats?.summary.top_user?.count || 0} bookings</Text>
+                                </div>
+                            </Space>
+                        </div>
+                    </Card>
+                </Col>
+                <Col xs={24} sm={12} md={6}>
+                    <Card bordered={false} style={{ borderRadius: '12px', boxShadow: '0 2px 8px rgba(0,0,0,0.05)' }}>
+                        <Text type="secondary" style={{ fontSize: '14px' }}>Top Vehicle</Text>
+                        <div style={{ marginTop: 8 }}>
+                            <Space align="start">
+                                <CarOutlined style={{ fontSize: '20px', color: '#f59e0b', marginTop: 4 }} />
+                                <div>
+                                    <div style={{ fontWeight: 700, fontSize: '18px' }}>{advancedStats?.summary.top_car?.name || '-'}</div>
+                                    <Text type="secondary" size="small">{advancedStats?.summary.top_car?.count || 0} bookings</Text>
+                                </div>
+                            </Space>
+                        </div>
+                    </Card>
+                </Col>
+            </Row>
+
+            {loading ? (
+                <div style={{ textAlign: 'center', padding: '50px' }}>
+                    <Spin size="large" />
+                </div>
+            ) : (
+                <>
+                    <Row gutter={[24, 24]} style={{ marginBottom: 24 }}>
+                        <Col xs={24} lg={16}>
+                            <Card title="Usage Trend" bordered={false} style={{ borderRadius: '12px', boxShadow: '0 2px 8px rgba(0,0,0,0.05)' }}>
+                                <ResponsiveContainer width="100%" height={300}>
+                                    <LineChart data={advancedStats?.daily_stats}>
+                                        <CartesianGrid strokeDasharray="3 3" vertical={false} />
+                                        <XAxis dataKey="date" />
+                                        <YAxis allowDecimals={false} />
+                                        <Tooltip />
+                                        <Legend />
+                                        <Line type="monotone" dataKey="bookings" stroke="#4f46e5" strokeWidth={2} name="Bookings" dot={{ r: 4 }} activeDot={{ r: 6 }} />
+                                    </LineChart>
+                                </ResponsiveContainer>
+                            </Card>
+                        </Col>
+                        <Col xs={24} lg={8}>
+                            <Card title="Quick Overview" bordered={false} style={{ borderRadius: '12px', boxShadow: '0 2px 8px rgba(0,0,0,0.05)' }}>
+                                <Statistic title="Fleet Size" value={basicStats?.total_cars} />
+                                <div style={{ marginTop: 20 }}>
+                                    <Text type="secondary">System data as of today.</Text>
+                                </div>
+                            </Card>
+                        </Col>
+                    </Row>
+
+                    <Card
+                        title="Bookings in Range"
+                        bordered={false}
+                        style={{ borderRadius: '12px', boxShadow: '0 2px 8px rgba(0,0,0,0.05)' }}
+                    >
+                        <Table
+                            dataSource={advancedStats?.bookings}
+                            columns={columns}
+                            rowKey="id"
+                            pagination={{ pageSize: 10 }}
+                            scroll={{ x: true }}
+                        />
+                    </Card>
+                </>
+            )}
         </div>
     );
 };

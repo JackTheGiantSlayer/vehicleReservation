@@ -22,6 +22,7 @@ def check_daily_tasks():
 
 def check_overdue_bookings_internal():
     now = datetime.utcnow()
+    logging.info(f"Checking for overdue bookings at {now.strftime('%Y-%m-%d %H:%M:%S')} UTC")
     overdue_bookings = Booking.query.filter(
         Booking.end_time < now,
         Booking.status.in_(['approved', 'picked_up'])
@@ -64,3 +65,5 @@ def init_scheduler(app):
         )
         scheduler.start()
         logging.info("Scheduler initialized.")
+        for job in scheduler.get_jobs():
+            logging.info(f"Scheduled job: {job.id}, Next run: {job.next_run_time}")
