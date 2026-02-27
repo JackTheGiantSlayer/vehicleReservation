@@ -1,9 +1,10 @@
 import React, { useState, useEffect } from 'react';
-import { Table, Button, Modal, Form, Input, Select, InputNumber, message, Popconfirm, Tag, Space } from 'antd';
-import { PlusOutlined, EditOutlined, DeleteOutlined, ToolOutlined } from '@ant-design/icons';
+import { Table, Button, Modal, Form, Input, Select, InputNumber, message, Popconfirm, Tag, Space, Typography, Card, Row, Col } from 'antd';
+import { PlusOutlined, EditOutlined, DeleteOutlined, ToolOutlined, CarOutlined, DashboardOutlined, BgColorsOutlined, ContainerOutlined } from '@ant-design/icons';
 import CarService from '../../services/car.service';
 
 const { Option } = Select;
+const { Title, Text } = Typography;
 
 const AdminCars = () => {
     const [cars, setCars] = useState([]);
@@ -76,44 +77,94 @@ const AdminCars = () => {
     };
 
     const columns = [
-        { title: 'ID', dataIndex: 'id', key: 'id' },
-        { title: 'License Plate', dataIndex: 'license_plate', key: 'license_plate' },
-        { title: 'Brand', dataIndex: 'brand', key: 'brand' },
-        { title: 'Model', dataIndex: 'model', key: 'model' },
-        { title: 'Color', dataIndex: 'color', key: 'color' },
+        {
+            title: 'Vehicle Info',
+            key: 'vehicle',
+            render: (_, record) => (
+                <Space>
+                    <div style={{
+                        width: 44,
+                        height: 44,
+                        borderRadius: '12px',
+                        background: '#f1f5f9',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center'
+                    }}>
+                        <CarOutlined style={{ color: '#6366f1', fontSize: '22px' }} />
+                    </div>
+                    <div>
+                        <Text strong style={{ display: 'block', fontSize: '14px' }}>{record.brand} {record.model}</Text>
+                        <Tag color="blue" style={{ borderRadius: '4px', border: 'none', background: '#e0e7ff', color: '#4338ca', fontSize: '11px' }}>
+                            {record.license_plate}
+                        </Tag>
+                    </div>
+                </Space>
+            )
+        },
+        {
+            title: 'Color',
+            dataIndex: 'color',
+            key: 'color',
+            render: text => (
+                <Space size={4}>
+                    <BgColorsOutlined style={{ color: '#94a3b8' }} />
+                    <Text style={{ fontSize: '13px' }}>{text}</Text>
+                </Space>
+            )
+        },
         {
             title: 'Mileage',
-            dataIndex: 'current_mileage',
-            key: 'current_mileage',
-            render: (mileage) => <span>{mileage?.toLocaleString()} km</span>
+            key: 'mileage',
+            render: (_, record) => (
+                <div style={{ minWidth: '120px' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '4px' }}>
+                        <DashboardOutlined style={{ fontSize: '12px', color: '#94a3b8' }} />
+                        <Text style={{ fontSize: '13px' }}>{record.current_mileage?.toLocaleString()} km</Text>
+                    </div>
+                    <Text type="secondary" style={{ fontSize: '11px' }}>Total Odometer</Text>
+                </div>
+            )
+        },
+        {
+            title: 'Last Service',
+            key: 'last_service',
+            render: (_, record) => (
+                <div style={{ minWidth: '120px' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '4px' }}>
+                        <ToolOutlined style={{ fontSize: '12px', color: '#94a3b8' }} />
+                        <Text style={{ fontSize: '13px' }}>{record.last_maintenance_mileage?.toLocaleString()} km</Text>
+                    </div>
+                    <Text type="secondary" style={{ fontSize: '11px' }}>Previous Maintenance</Text>
+                </div>
+            )
         },
         {
             title: 'Status',
             dataIndex: 'status',
             key: 'status',
             render: (status, record) => {
-                let color = 'green';
-                if (status === 'maintenance') color = 'red';
-                if (status === 'reserved') color = 'orange';
+                let color = 'success';
+                if (status === 'maintenance') color = 'error';
+                if (status === 'reserved') color = 'warning';
 
-                // Show maintenance warning if due (every 10,000 km)
                 const interval = 10000;
                 const sinceLast = record.current_mileage - record.last_maintenance_mileage;
                 const isDue = sinceLast >= interval || (Math.floor(record.current_mileage / interval) > Math.floor(record.last_maintenance_mileage / interval));
 
                 return (
-                    <Space direction="vertical" size={0}>
-                        <Tag color={color}>{status.toUpperCase()}</Tag>
-                        {isDue && <Tag color="error" style={{ marginTop: 4 }}>SERVICE DUE</Tag>}
+                    <Space direction="vertical" size={4} style={{ display: 'flex' }}>
+                        <Tag color={color} style={{ borderRadius: '20px', padding: '1px 10px', fontWeight: 600, textTransform: 'capitalize', border: 'none' }}>
+                            {status}
+                        </Tag>
+                        {isDue && (
+                            <Tag color="error" style={{ borderRadius: '4px', border: 'none', fontWeight: 700, fontSize: '10px' }}>
+                                SERVICE DUE
+                            </Tag>
+                        )}
                     </Space>
                 );
             }
-        },
-        {
-            title: 'Last Service',
-            dataIndex: 'last_maintenance_mileage',
-            key: 'last_maintenance_mileage',
-            render: (mileage) => <span>{mileage?.toLocaleString()} km</span>
         },
         {
             title: 'Action',
@@ -121,21 +172,27 @@ const AdminCars = () => {
             render: (_, record) => (
                 <Space size="middle">
                     <Button
-                        icon={<EditOutlined />}
+                        type="text"
+                        icon={<EditOutlined style={{ color: '#6366f1' }} />}
                         onClick={() => showModal(record)}
-                        title="Edit Car"
+                        style={{ background: '#f5f3ff', borderRadius: '8px' }}
                     />
                     <Popconfirm
                         title="Mark car as serviced? This will reset the maintenance counter."
                         onConfirm={() => handleService(record.id)}
                     >
                         <Button
-                            icon={<ToolOutlined />}
-                            title="Mark as Serviced"
+                            type="text"
+                            icon={<ToolOutlined style={{ color: '#10b981' }} />}
+                            style={{ background: '#ecfdf5', borderRadius: '8px' }}
                         />
                     </Popconfirm>
                     <Popconfirm title="Sure to delete?" onConfirm={() => handleDelete(record.id)}>
-                        <Button icon={<DeleteOutlined />} danger title="Delete Car" />
+                        <Button
+                            type="text"
+                            icon={<DeleteOutlined style={{ color: '#ef4444' }} />}
+                            style={{ background: '#fef2f2', borderRadius: '8px' }}
+                        />
                     </Popconfirm>
                 </Space>
             ),
@@ -143,47 +200,116 @@ const AdminCars = () => {
     ];
 
     return (
-        <div>
-            <div style={{ marginBottom: 16, display: 'flex', justifyContent: 'space-between' }}>
-                <h2>Car Management</h2>
-                <Button type="primary" icon={<PlusOutlined />} onClick={() => showModal(null)}>
-                    Add Car
+        <div style={{ padding: '24px', maxWidth: '1600px', margin: '0 auto' }}>
+            <div style={{ marginBottom: '32px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <div>
+                    <Title level={2} style={{ margin: 0, fontWeight: 800, letterSpacing: '-0.5px' }}>Fleet Management</Title>
+                    <Text type="secondary">Monitor and maintain the vehicle inventory</Text>
+                </div>
+                <Button
+                    type="primary"
+                    icon={<PlusOutlined />}
+                    onClick={() => showModal(null)}
+                    size="large"
+                    style={{
+                        borderRadius: '12px',
+                        height: '48px',
+                        padding: '0 24px',
+                        background: 'var(--primary-gradient)',
+                        border: 'none',
+                        fontWeight: 700,
+                        boxShadow: '0 4px 14px 0 rgba(99, 102, 241, 0.39)'
+                    }}
+                >
+                    Add Vehicle
                 </Button>
             </div>
-            <Table columns={columns} dataSource={cars} rowKey="id" loading={loading} scroll={{ x: true }} />
 
-            <Modal title={editingCar ? "Edit Car" : "Add Car"} visible={isModalVisible} onOk={handleOk} onCancel={() => setIsModalVisible(false)}>
-                <Form form={form} layout="vertical">
-                    <Form.Item name="license_plate" label="License Plate" rules={[{ required: true }]}>
-                        <Input />
-                    </Form.Item>
-                    <div style={{ display: 'flex', gap: '16px' }}>
-                        <Form.Item name="brand" label="Brand" rules={[{ required: true }]} style={{ flex: 1 }}>
-                            <Input />
+            <Card
+                className="premium-card"
+                style={{ borderRadius: '20px', border: 'none' }}
+                bodyStyle={{ padding: 0 }}
+            >
+                <Table
+                    columns={columns}
+                    dataSource={cars}
+                    rowKey="id"
+                    loading={loading}
+                    scroll={{ x: true }}
+                    pagination={{ pageSize: 10, hideOnSinglePage: true }}
+                />
+            </Card>
+
+            <Modal
+                title={
+                    <Space>
+                        <CarOutlined style={{ color: '#6366f1' }} />
+                        <span style={{ fontWeight: 700 }}>{editingCar ? "Update Vehicle Details" : "Register New Vehicle"}</span>
+                    </Space>
+                }
+                open={isModalVisible}
+                onOk={handleOk}
+                onCancel={() => setIsModalVisible(false)}
+                width={650}
+                centered
+                okText={editingCar ? "Save Changes" : "Register Vehicle"}
+                okButtonProps={{
+                    style: { borderRadius: '8px', height: '40px', background: 'var(--primary-gradient)', border: 'none', fontWeight: 600 }
+                }}
+                cancelButtonProps={{ style: { borderRadius: '8px', height: '40px' } }}
+            >
+                <div style={{ padding: '12px 0' }}>
+                    <Form form={form} layout="vertical" requiredMark={false}>
+                        <Row gutter={16}>
+                            <Col span={12}>
+                                <Form.Item name="license_plate" label={<Text strong>License Plate</Text>} rules={[{ required: true }]}>
+                                    <Input placeholder="e.g. ABC-1234" style={{ borderRadius: '10px' }} />
+                                </Form.Item>
+                            </Col>
+                            <Col span={12}>
+                                <Form.Item name="color" label={<Text strong>Car Color</Text>} rules={[{ required: true }]}>
+                                    <Input placeholder="e.g. Silver Metallic" style={{ borderRadius: '10px' }} />
+                                </Form.Item>
+                            </Col>
+                        </Row>
+
+                        <Row gutter={16}>
+                            <Col span={12}>
+                                <Form.Item name="brand" label={<Text strong>Brand</Text>} rules={[{ required: true }]}>
+                                    <Input placeholder="e.g. Toyota" style={{ borderRadius: '10px' }} />
+                                </Form.Item>
+                            </Col>
+                            <Col span={12}>
+                                <Form.Item name="model" label={<Text strong>Model</Text>} rules={[{ required: true }]}>
+                                    <Input placeholder="e.g. Hilux Revo" style={{ borderRadius: '10px' }} />
+                                </Form.Item>
+                            </Col>
+                        </Row>
+
+                        <Divider orientation="left"><Text type="secondary" style={{ fontSize: '12px' }}>Odometer & Status</Text></Divider>
+
+                        <Row gutter={16}>
+                            <Col span={12}>
+                                <Form.Item name="current_mileage" label={<Text strong>Current Mileage (km)</Text>}>
+                                    <InputNumber style={{ width: '100%', borderRadius: '10px' }} min={0} />
+                                </Form.Item>
+                            </Col>
+                            <Col span={12}>
+                                <Form.Item name="last_maintenance_mileage" label={<Text strong>Last Service Mileage (km)</Text>}>
+                                    <InputNumber style={{ width: '100%', borderRadius: '10px' }} min={0} />
+                                </Form.Item>
+                            </Col>
+                        </Row>
+
+                        <Form.Item name="status" label={<Text strong>Current Status</Text>} initialValue="available">
+                            <Select style={{ borderRadius: '10px' }} dropdownStyle={{ borderRadius: '12px' }}>
+                                <Option value="available">Available</Option>
+                                <Option value="reserved">Reserved</Option>
+                                <Option value="maintenance">Maintenance</Option>
+                            </Select>
                         </Form.Item>
-                        <Form.Item name="model" label="Model" rules={[{ required: true }]} style={{ flex: 1 }}>
-                            <Input />
-                        </Form.Item>
-                    </div>
-                    <Form.Item name="color" label="Color" rules={[{ required: true }]}>
-                        <Input />
-                    </Form.Item>
-                    <div style={{ display: 'flex', gap: '16px' }}>
-                        <Form.Item name="current_mileage" label="Current Mileage" style={{ flex: 1 }}>
-                            <InputNumber style={{ width: '100%' }} />
-                        </Form.Item>
-                        <Form.Item name="last_maintenance_mileage" label="Last Service Mileage" style={{ flex: 1 }}>
-                            <InputNumber style={{ width: '100%' }} />
-                        </Form.Item>
-                    </div>
-                    <Form.Item name="status" label="Status" initialValue="available">
-                        <Select>
-                            <Option value="available">Available</Option>
-                            <Option value="reserved">Reserved</Option>
-                            <Option value="maintenance">Maintenance</Option>
-                        </Select>
-                    </Form.Item>
-                </Form>
+                    </Form>
+                </div>
             </Modal>
         </div>
     );
