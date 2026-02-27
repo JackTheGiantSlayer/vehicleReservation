@@ -228,7 +228,7 @@ const AdminReports = () => {
                             <Card bordered={false} className="premium-card" style={{ borderRadius: '16px', background: '#fff', height: '100%' }}>
                                 <Statistic
                                     title={<Text strong>สถานะรถ</Text>}
-                                    value={`${advancedStats.summary?.active_cars || 0} / ${advancedStats.summary?.total_cars || 0}`}
+                                    value={`${basicStats?.active_cars || 0} / ${basicStats?.total_cars || 0}`}
                                     valueStyle={{ color: '#1e293b', fontWeight: 800 }}
                                 />
                                 <div style={{ marginTop: '4px', fontSize: '12px', color: '#64748b' }}>
@@ -292,7 +292,7 @@ const AdminReports = () => {
                                 style={{ borderRadius: '20px', height: '100%' }}
                             >
                                 <Table
-                                    dataSource={advancedStats.top_users}
+                                    dataSource={advancedStats.summary.top_users}
                                     columns={userColumns}
                                     pagination={false}
                                     size="small"
@@ -308,7 +308,7 @@ const AdminReports = () => {
                         style={{ borderRadius: '20px', marginBottom: '32px' }}
                     >
                         <Table
-                            dataSource={advancedStats.car_stats}
+                            dataSource={advancedStats.summary.car_stats}
                             columns={carColumns}
                             pagination={false}
                             rowKey="name"
