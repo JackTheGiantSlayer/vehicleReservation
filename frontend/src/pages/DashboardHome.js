@@ -100,7 +100,7 @@ const DashboardHome = () => {
     };
 
     return (
-        <div style={{ padding: '24px', maxWidth: '1600px', margin: '0 auto' }}>
+        <div style={{ padding: '0 24px 24px 24px', maxWidth: '1600px', margin: '0 auto' }}>
             <div style={{ marginBottom: '40px' }}>
                 <Title level={2} style={{ marginBottom: '24px', fontWeight: 800, letterSpacing: '-0.5px' }}>
                     Dashboard Overview
@@ -110,7 +110,7 @@ const DashboardHome = () => {
                         <Card
                             bordered={false}
                             className="premium-card mesh-gradient-primary"
-                            style={{ borderRadius: '16px' }}
+                            style={{ borderRadius: '16px', height: '100%' }}
                         >
                             <Statistic
                                 title={<Text style={{ color: 'rgba(255,255,255,0.85)', fontWeight: 500 }}>Total Bookings</Text>}
@@ -118,13 +118,16 @@ const DashboardHome = () => {
                                 prefix={<CalendarOutlined style={{ color: '#fff', opacity: 0.8 }} />}
                                 valueStyle={{ color: '#fff', fontWeight: 800, fontSize: '28px' }}
                             />
+                            <div style={{ marginTop: '8px', fontSize: '12px', color: 'rgba(255,255,255,0.7)' }}>
+                                Cumulative history
+                            </div>
                         </Card>
                     </Col>
                     <Col xs={24} sm={12} lg={6}>
                         <Card
                             bordered={false}
                             className="premium-card"
-                            style={{ borderRadius: '16px', background: '#fff' }}
+                            style={{ borderRadius: '16px', background: '#fff', height: '100%' }}
                         >
                             <Statistic
                                 title={<Text strong>Active Reservations</Text>}
@@ -141,7 +144,7 @@ const DashboardHome = () => {
                         <Card
                             bordered={false}
                             className="premium-card"
-                            style={{ borderRadius: '16px', background: '#fff' }}
+                            style={{ borderRadius: '16px', background: '#fff', height: '100%' }}
                         >
                             <Statistic
                                 title={<Text strong>Waiting Approval</Text>}
@@ -158,7 +161,7 @@ const DashboardHome = () => {
                         <Card
                             bordered={false}
                             className="premium-card"
-                            style={{ borderRadius: '16px', background: '#fff' }}
+                            style={{ borderRadius: '16px', background: '#fff', height: '100%' }}
                         >
                             <Statistic
                                 title={<Text strong>Completed Today</Text>}
