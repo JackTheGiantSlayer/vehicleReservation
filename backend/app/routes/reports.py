@@ -63,21 +63,41 @@ def get_advanced_stats():
     from flask import request
     from app.models import User, Car
     from datetime import datetime
+    import logging
 
     start_date_str = request.args.get('start_date')
     end_date_str = request.args.get('end_date')
+    
+    logging.info(f"Advanced Stats Request: start={start_date_str}, end={end_date_str}")
 
     query = Booking.query
 
-    if start_date_str:
-        start_date = datetime.fromisoformat(start_date_str)
-        query = query.filter(Booking.start_time >= start_date)
-    if end_date_str:
-        end_date = datetime.fromisoformat(end_date_str)
-        # End of day for the end_date
-        query = query.filter(Booking.start_time <= end_date)
+    try:
+        if start_date_str:
+            # Handle ISO format from frontend (Z or +00:00)
+            if 'Z' in start_date_str:
+                start_date_str = start_date_str.replace('Z', '+00:00')
+            start_date = datetime.fromisoformat(start_date_str)
+            # Remove timezone if DB stores naive
+            if start_date.tzinfo:
+                start_date = start_date.replace(tzinfo=None)
+            query = query.filter(Booking.start_time >= start_date)
+            
+        if end_date_str:
+            if 'Z' in end_date_str:
+                end_date_str = end_date_str.replace('Z', '+00:00')
+            end_date = datetime.fromisoformat(end_date_str)
+            if end_date.tzinfo:
+                end_date = end_date.replace(tzinfo=None)
+            query = query.filter(Booking.start_time <= end_date)
+            
+    except Exception as e:
+        logging.error(f"Error parsing dates: {e}")
+        # Continue with unfiltered query or return error? 
+        # For now, let's continue to avoid breaking the UI but log it.
 
     bookings = query.all()
+    logging.info(f"Bookings found for range: {len(bookings)}")
 
     if not bookings:
         return jsonify({

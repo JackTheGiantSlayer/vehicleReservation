@@ -29,8 +29,9 @@ const AdminReports = () => {
         try {
             const params = {};
             if (dates && dates[0] && dates[1]) {
-                params.start_date = dates[0].startOf('day').toISOString();
-                params.end_date = dates[1].endOf('day').toISOString();
+                // Clone to avoid mutating the state objects
+                params.start_date = dates[0].clone().startOf('day').format('YYYY-MM-DDTHH:mm:ss');
+                params.end_date = dates[1].clone().endOf('day').format('YYYY-MM-DDTHH:mm:ss');
             }
             const res = await ReportService.getAdvancedStats(params);
             setAdvancedStats(res.data);
@@ -63,6 +64,8 @@ const AdminReports = () => {
             { title: 'Date', dataIndex: 'start_time' },
             { title: 'User', dataIndex: 'user' },
             { title: 'Vehicle', dataIndex: 'car' },
+            { title: 'Destination', dataIndex: 'destination' },
+            { title: 'Objective', dataIndex: 'purpose' },
             { title: 'Status', dataIndex: 'status' },
             { title: 'Mileage (km)', dataIndex: 'mileage' }
         ];
@@ -89,6 +92,8 @@ const AdminReports = () => {
         },
         { title: 'User', dataIndex: 'user', key: 'user' },
         { title: 'Vehicle', dataIndex: 'car', key: 'car' },
+        { title: 'Destination', dataIndex: 'destination', key: 'destination' },
+        { title: 'Objective', dataIndex: 'purpose', key: 'purpose' },
         {
             title: 'Mileage',
             dataIndex: 'mileage',
