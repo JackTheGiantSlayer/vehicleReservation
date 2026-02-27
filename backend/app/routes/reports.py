@@ -79,12 +79,26 @@ def get_advanced_stats():
 
     bookings = query.all()
 
+    if not bookings:
+        return jsonify({
+            'summary': {
+                'top_users': [],
+                'car_stats': [],
+                'total_mileage': 0,
+                'total_bookings': 0
+            },
+            'daily_stats': [],
+            'bookings': []
+        }), 200
+
+    booking_ids = [b.id for b in bookings]
+
     # 1. Top 10 Users
     user_counts = db.session.query(
         User.full_name,
         func.count(Booking.id).label('count')
     ).join(Booking, User.id == Booking.user_id) \
-     .filter(Booking.id.in_([b.id for b in bookings])) \
+     .filter(Booking.id.in_(booking_ids)) \
      .group_by(User.id).order_by(func.count(Booking.id).desc()).limit(10).all()
 
     # 2. Vehicle Stats (All cars that were used in this range)
@@ -95,22 +109,22 @@ def get_advanced_stats():
         func.count(Booking.id).label('count'),
         func.sum(
             func.case(
-                (Booking.status == 'completed', Booking.end_mileage - Booking.start_mileage),
+                [(Booking.status == 'completed', Booking.end_mileage - Booking.start_mileage)],
                 else_=0
             )
         ).label('total_mileage')
     ).join(Booking, Car.id == Booking.car_id) \
-     .filter(Booking.id.in_([b.id for b in bookings])) \
+     .filter(Booking.id.in_(booking_ids)) \
      .group_by(Car.id).order_by(func.count(Booking.id).desc()).all()
 
     # 3. Total stats
-    total_mileage = sum([c.total_mileage for c in car_stats if c.total_mileage]) or 0
+    total_mileage_sum = sum([int(c.total_mileage or 0) for c in car_stats]) or 0
 
     # 4. Daily Stats for Chart
     daily_stats = db.session.query(
         func.to_char(Booking.start_time, 'YYYY-MM-DD').label('date'),
         func.count(Booking.id)
-    ).filter(Booking.id.in_([b.id for b in bookings])) \
+    ).filter(Booking.id.in_(booking_ids)) \
      .group_by('date').order_by('date').all()
 
     daily_data = [{'date': d[0], 'bookings': d[1]} for d in daily_stats]
@@ -120,6 +134,10 @@ def get_advanced_stats():
     for b in bookings:
         u = User.query.get(b.user_id)
         c = Car.query.get(b.car_id)
+        mileage = 0
+        if b.status == 'completed' and b.end_mileage is not None and b.start_mileage is not None:
+             mileage = b.end_mileage - b.start_mileage
+
         detailed_bookings.append({
             'id': b.id,
             'user': u.full_name if u else 'N/A',
@@ -127,14 +145,14 @@ def get_advanced_stats():
             'start_time': b.start_time.strftime('%Y-%m-%d %H:%M'),
             'end_time': b.end_time.strftime('%Y-%m-%d %H:%M'),
             'status': b.status,
-            'mileage': (b.end_mileage - b.start_mileage) if b.status == 'completed' and b.end_mileage and b.start_mileage else 0
+            'mileage': mileage
         })
 
     return jsonify({
         'summary': {
             'top_users': [{'name': u.full_name, 'count': u.count} for u in user_counts],
             'car_stats': [{'name': f"{c.brand} {c.model} ({c.license_plate})", 'count': c.count, 'mileage': int(c.total_mileage or 0)} for c in car_stats],
-            'total_mileage': int(total_mileage),
+            'total_mileage': int(total_mileage_sum),
             'total_bookings': len(bookings)
         },
         'daily_stats': daily_data,
