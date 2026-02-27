@@ -9,6 +9,7 @@ bp = Blueprint('reports', __name__)
 def get_stats():
     # 1. Total Cars
     total_cars = Car.query.count()
+    active_cars = Car.query.filter(Car.status.in_(['available', 'reserved'])).count()
 
     # 2. Total Bookings
     total_bookings = Booking.query.count()
@@ -53,6 +54,7 @@ def get_stats():
 
     return jsonify({
         'total_cars': total_cars,
+        'active_cars': active_cars,
         'total_bookings': total_bookings,
         'cars_stats': car_data,
         'monthly_stats': monthly_data
@@ -154,7 +156,9 @@ def get_advanced_stats():
             'start_time': b.start_time.strftime('%Y-%m-%d %H:%M'),
             'end_time': b.end_time.strftime('%Y-%m-%d %H:%M'),
             'status': b.status,
-            'mileage': mileage
+            'mileage': mileage,
+            'destination': b.destination or '-',
+            'purpose': b.objective or '-'
         })
 
     # Format summaries

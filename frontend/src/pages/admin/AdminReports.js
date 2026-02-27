@@ -55,32 +55,28 @@ const AdminReports = () => {
     const handleExportPDF = () => {
         if (!advancedStats) return;
 
+        const dateRangeString = dateRange[0] && dateRange[1]
+            ? `${dateRange[0].format('DD/MM/YYYY')} - ${dateRange[1].format('DD/MM/YYYY')}`
+            : 'ทั้งหมด';
+
         const filename = dateRange[0] && dateRange[1]
             ? `report_${dateRange[0].format('YYYYMMDD')}_${dateRange[1].format('YYYYMMDD')}.pdf`
             : 'vehicle_report.pdf';
 
-        // 1. All Bookings Table
-        const bookingCols = [
-            { title: 'Date', dataIndex: 'start_time' },
-            { title: 'User', dataIndex: 'user' },
-            { title: 'Vehicle', dataIndex: 'car' },
-            { title: 'Destination', dataIndex: 'destination' },
-            { title: 'Objective', dataIndex: 'purpose' },
-            { title: 'Status', dataIndex: 'status' },
-            { title: 'Mileage (km)', dataIndex: 'mileage' }
-        ];
-        const bookingData = advancedStats.bookings.map(b => ({ ...b, status: b.status.toUpperCase() }));
+        const payload = {
+            summary: {
+                ...advancedStats.summary,
+                active_cars: basicStats?.active_cars,
+                total_cars: basicStats?.total_cars
+            },
+            bookings: advancedStats.bookings.map(b => ({ ...b, status: b.status.toUpperCase() })),
+            top_users: advancedStats.summary.top_users.slice(0, 5),
+            car_stats: advancedStats.summary.car_stats,
+            daily_stats: advancedStats.daily_stats,
+            dateRangeString
+        };
 
-        // 2. Car Usage Table
-        const carCols = [
-            { title: 'Vehicle', dataIndex: 'name' },
-            { title: 'Total Bookings', dataIndex: 'count' },
-            { title: 'Total Mileage (km)', dataIndex: 'mileage' }
-        ];
-
-        // Custom multi-table PDF or just combined?
-        // Let's use simple export for now but with merged info
-        ExportService.exportToPDF(bookingCols, bookingData, filename);
+        ExportService.exportAdvancedReport(payload, filename);
     };
 
     const columns = [
@@ -167,8 +163,12 @@ const AdminReports = () => {
                 </Col>
                 <Col xs={24} sm={12} md={8}>
                     <Card bordered={false} style={{ borderRadius: '12px', boxShadow: '0 2px 8px rgba(0,0,0,0.05)' }}>
-                        <Statistic title="Total Active Cars" value={basicStats?.total_cars} />
-                        <Text type="secondary" size="small">Total fleet size across system</Text>
+                        <Statistic
+                            title="Vehicle Fleet Status"
+                            value={`${basicStats?.active_cars || 0} / ${basicStats?.total_cars || 0}`}
+                            valueStyle={{ fontWeight: 700 }}
+                        />
+                        <Text type="secondary" size="small">Ready for use (Active / Total)</Text>
                     </Card>
                 </Col>
             </Row>
@@ -199,12 +199,12 @@ const AdminReports = () => {
                         {/* Top Users */}
                         <Col xs={24} xl={8}>
                             <Card
-                                title={<Space><UserOutlined /><span>Top 10 Users</span></Space>}
+                                title={<Space><UserOutlined /><span>Top 5 Users</span></Space>}
                                 bordered={false}
                                 style={{ borderRadius: '12px', boxShadow: '0 2px 8px rgba(0,0,0,0.05)' }}
                             >
                                 <Table
-                                    dataSource={advancedStats?.summary.top_users}
+                                    dataSource={advancedStats?.summary.top_users.slice(0, 5)}
                                     columns={userColumns}
                                     rowKey="name"
                                     pagination={false}
