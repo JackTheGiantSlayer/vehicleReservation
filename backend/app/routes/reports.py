@@ -98,7 +98,7 @@ def get_advanced_stats():
         # Continue with unfiltered query or return error? 
         # For now, let's continue to avoid breaking the UI but log it.
 
-    bookings = query.all()
+    bookings = query.order_by(Booking.start_time).all()
     logging.info(f"Bookings found for range: {len(bookings)}")
 
     if not bookings:
