@@ -39,7 +39,7 @@ const exportPDF = (columns, data, filename) => {
             head: [columns.map(col => col.title)],
             body: data.map(row => columns.map(col => row[col.dataIndex] || '')),
             styles: { font: 'THSarabunNew', fontSize: 10 },
-            headStyles: { font: 'THSarabunNew', fontSize: 11 }
+            headStyles: { font: 'THSarabunNew', fontSize: 11, fontStyle: 'normal' }
         });
 
         doc.save(filename);
@@ -74,7 +74,7 @@ const exportAdvancedReport = (data, filename) => {
         doc.setFontSize(12);
         doc.text(`- ระยะทางรวมทั้งหมด: ${summary.total_mileage} กม.`, 20, 55);
         doc.text(`- จำนวนการจองทั้งหมด: ${summary.total_bookings} รายการ`, 20, 65);
-        doc.text(`- สถานะกองยานพาหนะ: พร้อมใช้ ${summary.active_cars} คัน / ทั้งหมด ${summary.total_cars} คัน`, 20, 75);
+        doc.text(`- สถานะรถ: พร้อมใช้ ${summary.active_cars} คัน / ทั้งหมด ${summary.total_cars} คัน`, 20, 75);
 
         let currentY = 85;
 
@@ -97,7 +97,7 @@ const exportAdvancedReport = (data, filename) => {
             body: top_users.map(u => [u.name, u.count]),
             theme: 'striped',
             styles: { font: 'THSarabunNew', fontSize: 10 },
-            headStyles: { font: 'THSarabunNew', fontSize: 11 }
+            headStyles: { font: 'THSarabunNew', fontSize: 11, fontStyle: 'normal' }
         });
 
         // 5. Car Usage
@@ -116,7 +116,7 @@ const exportAdvancedReport = (data, filename) => {
             body: car_stats.map(c => [c.name, c.count, `${c.mileage} กม.`]),
             theme: 'striped',
             styles: { font: 'THSarabunNew', fontSize: 10 },
-            headStyles: { font: 'THSarabunNew', fontSize: 11 }
+            headStyles: { font: 'THSarabunNew', fontSize: 11, fontStyle: 'normal' }
         });
 
         // 6. Daily Trend Data
@@ -133,7 +133,7 @@ const exportAdvancedReport = (data, filename) => {
             body: daily_stats.map(d => [d.date, d.bookings]),
             theme: 'grid',
             styles: { font: 'THSarabunNew', fontSize: 9 },
-            headStyles: { font: 'THSarabunNew', fontSize: 10 },
+            headStyles: { font: 'THSarabunNew', fontSize: 10, fontStyle: 'normal' },
             margin: { left: 14, right: 14 }
         });
 
@@ -153,7 +153,7 @@ const exportAdvancedReport = (data, filename) => {
                 b.mileage > 0 ? `${b.mileage} กม.` : '-'
             ]),
             styles: { font: 'THSarabunNew', fontSize: 9 },
-            headStyles: { font: 'THSarabunNew', fontSize: 10 }
+            headStyles: { font: 'THSarabunNew', fontSize: 10, fontStyle: 'normal' }
         });
 
         doc.save(filename);

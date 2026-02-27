@@ -181,7 +181,7 @@ const AdminReports = () => {
                 <Col xs={24} sm={12} md={8}>
                     <Card bordered={false} style={{ borderRadius: '12px', boxShadow: '0 2px 8px rgba(0,0,0,0.05)' }}>
                         <Statistic
-                            title="Vehicle Fleet Status"
+                            title="สถานะรถ"
                             value={`${basicStats?.active_cars || 0} / ${basicStats?.total_cars || 0}`}
                             valueStyle={{ fontWeight: 700 }}
                         />
