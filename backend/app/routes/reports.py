@@ -91,70 +91,64 @@ def get_advanced_stats():
             'bookings': []
         }), 200
 
-    booking_ids = [b.id for b in bookings]
-
-    # 1. Top 10 Users
-    user_counts = db.session.query(
-        User.full_name,
-        func.count(Booking.id).label('count')
-    ).join(Booking, User.id == Booking.user_id) \
-     .filter(Booking.id.in_(booking_ids)) \
-     .group_by(User.id).order_by(func.count(Booking.id).desc()).limit(10).all()
-
-    # 2. Vehicle Stats (All cars that were used in this range)
-    car_stats = db.session.query(
-        Car.license_plate,
-        Car.brand,
-        Car.model,
-        func.count(Booking.id).label('count'),
-        func.sum(
-            func.case(
-                [(Booking.status == 'completed', Booking.end_mileage - Booking.start_mileage)],
-                else_=0
-            )
-        ).label('total_mileage')
-    ).join(Booking, Car.id == Booking.car_id) \
-     .filter(Booking.id.in_(booking_ids)) \
-     .group_by(Car.id).order_by(func.count(Booking.id).desc()).all()
-
-    # 3. Total stats
-    total_mileage_sum = sum([int(c.total_mileage or 0) for c in car_stats]) or 0
-
-    # 4. Daily Stats for Chart
-    daily_stats = db.session.query(
-        func.to_char(Booking.start_time, 'YYYY-MM-DD').label('date'),
-        func.count(Booking.id)
-    ).filter(Booking.id.in_(booking_ids)) \
-     .group_by('date').order_by('date').all()
-
-    daily_data = [{'date': d[0], 'bookings': d[1]} for d in daily_stats]
-
-    # 5. Full list for table/PDF
+    # Dictionaries for aggregation
+    user_counts = {}
+    car_stats_dict = {}
+    daily_stats_dict = {}
+    total_mileage_sum = 0
     detailed_bookings = []
+
+    # Map users and cars for quick lookup (if list is small)
+    # For large datasets, this should be optimized, but for reports it's usually okay.
+    from app.models import User, Car
+    users_dict = {u.id: u.full_name for u in User.query.all()}
+    cars_obj_dict = {c.id: f"{c.brand} {c.model} ({c.license_plate})" for c in Car.query.all()}
+
     for b in bookings:
-        u = User.query.get(b.user_id)
-        c = Car.query.get(b.car_id)
+        # User count
+        u_name = users_dict.get(b.user_id, 'N/A')
+        user_counts[u_name] = user_counts.get(u_name, 0) + 1
+
+        # Car stats
+        c_name = cars_obj_dict.get(b.car_id, 'N/A')
+        if c_name not in car_stats_dict:
+            car_stats_dict[c_name] = {'name': c_name, 'count': 0, 'mileage': 0}
+        
+        car_stats_dict[c_name]['count'] += 1
+        
         mileage = 0
         if b.status == 'completed' and b.end_mileage is not None and b.start_mileage is not None:
-             mileage = b.end_mileage - b.start_mileage
+            mileage = b.end_mileage - b.start_mileage
+            car_stats_dict[c_name]['mileage'] += mileage
+            total_mileage_sum += mileage
 
+        # Daily stats
+        d_str = b.start_time.strftime('%Y-%m-%d')
+        daily_stats_dict[d_str] = daily_stats_dict.get(d_str, 0) + 1
+
+        # Detailed record
         detailed_bookings.append({
             'id': b.id,
-            'user': u.full_name if u else 'N/A',
-            'car': f"{c.brand} {c.model} ({c.license_plate})" if c else 'N/A',
+            'user': u_name,
+            'car': c_name,
             'start_time': b.start_time.strftime('%Y-%m-%d %H:%M'),
             'end_time': b.end_time.strftime('%Y-%m-%d %H:%M'),
             'status': b.status,
             'mileage': mileage
         })
 
+    # Format summaries
+    sorted_users = sorted([{'name': k, 'count': v} for k, v in user_counts.items()], key=lambda x: x['count'], reverse=True)[:10]
+    sorted_cars = sorted(list(car_stats_dict.values()), key=lambda x: x['count'], reverse=True)
+    sorted_daily = sorted([{'date': k, 'bookings': v} for k, v in daily_stats_dict.items()], key=lambda x: x['date'])
+
     return jsonify({
         'summary': {
-            'top_users': [{'name': u.full_name, 'count': u.count} for u in user_counts],
-            'car_stats': [{'name': f"{c.brand} {c.model} ({c.license_plate})", 'count': c.count, 'mileage': int(c.total_mileage or 0)} for c in car_stats],
+            'top_users': sorted_users,
+            'car_stats': sorted_cars,
             'total_mileage': int(total_mileage_sum),
             'total_bookings': len(bookings)
         },
-        'daily_stats': daily_data,
+        'daily_stats': sorted_daily,
         'bookings': detailed_bookings
     }), 200
