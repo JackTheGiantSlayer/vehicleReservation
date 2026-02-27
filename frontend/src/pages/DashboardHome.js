@@ -60,17 +60,23 @@ const DashboardHome = () => {
     const dateCellRender = (value) => {
         const listData = getBookingsForDate(value);
         return (
-            <ul className="events" style={{ listStyle: 'none', padding: 0, margin: 0 }}>
+            <div className="events" style={{ padding: '4px 0', display: 'flex', flexDirection: 'column', gap: '4px' }}>
                 {listData.map((item) => (
-                    <li key={item.id}>
+                    <div key={item.id} style={{ display: 'flex', alignItems: 'center' }}>
                         <Badge
                             status={item.status === 'completed' ? 'success' : (item.status === 'approved' ? 'error' : 'warning')}
                             text={`${item.car_license} (${item.car_model})`}
-                            style={{ fontSize: '10px' }}
+                            style={{
+                                fontSize: '11px',
+                                whiteSpace: 'nowrap',
+                                overflow: 'hidden',
+                                textOverflow: 'ellipsis',
+                                width: '100%'
+                            }}
                         />
-                    </li>
+                    </div>
                 ))}
-            </ul>
+            </div>
         );
     };
 
@@ -90,9 +96,18 @@ const DashboardHome = () => {
         const backgroundColor = isWeekend ? '#fff1f0' : 'transparent';
 
         return (
-            <div className="ant-picker-cell-inner ant-picker-calendar-date" style={{ backgroundColor, height: '100%', minHeight: '100px', display: 'flex', flexDirection: 'column' }}>
-                <div className="ant-picker-calendar-date-value">{date.date()}</div>
-                <div className="ant-picker-calendar-date-content" style={{ flex: 1 }}>
+            <div className="ant-picker-cell-inner ant-picker-calendar-date"
+                style={{
+                    backgroundColor,
+                    height: '140px',
+                    display: 'flex',
+                    flexDirection: 'column',
+                    padding: '8px',
+                    transition: 'all 0.2s ease'
+                }}
+            >
+                <div className="ant-picker-calendar-date-value" style={{ marginBottom: '8px', fontWeight: 600 }}>{date.date()}</div>
+                <div className="ant-picker-calendar-date-content" style={{ flex: 1, overflowY: 'auto', margin: 0 }}>
                     {dateCellRender(date)}
                 </div>
             </div>
