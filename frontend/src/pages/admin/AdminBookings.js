@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Table, Tag, Button, message, Space, Typography, Card, Avatar } from 'antd';
-import { CheckCircleOutlined, CloseCircleOutlined, UserOutlined, PhoneOutlined, CarOutlined, ClockCircleOutlined, DashboardOutlined, EnvironmentOutlined } from '@ant-design/icons';
+import { CheckCircleOutlined, CloseCircleOutlined, UserOutlined, PhoneOutlined, CarOutlined, ClockCircleOutlined, DashboardOutlined, EnvironmentOutlined, SyncOutlined } from '@ant-design/icons';
 import BookingService from '../../services/booking.service';
 import moment from 'moment';
 
@@ -91,6 +91,9 @@ const AdminBookings = () => {
                         <Text style={{ fontSize: '13px' }}>{moment(record.start_time).format('DD MMM, HH:mm')}</Text>
                     </div>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                        <div style={{ width: '12px', marginLeft: '6px', borderLeft: '1px dashed #e2e8f0', height: '8px' }} />
+                    </div>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                         <ClockCircleOutlined style={{ fontSize: '12px', color: '#94a3b8' }} />
                         <Text style={{ fontSize: '13px' }}>{moment(record.end_time).format('DD MMM, HH:mm')}</Text>
                     </div>
@@ -103,10 +106,10 @@ const AdminBookings = () => {
             render: (_, record) => (
                 <div style={{ maxWidth: '200px' }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '4px' }}>
-                        <EnvironmentOutlined style={{ fontSize: '12px', color: '#6366f1' }} />
+                        <EnvironmentOutlined style={{ fontSize: '12px', color: '#94a3b8' }} />
                         <Text strong style={{ fontSize: '13px' }}>{record.destination || 'Not Specified'}</Text>
                     </div>
-                    <Text type="secondary" style={{ fontSize: '12px', display: 'block' }}>{record.objective}</Text>
+                    <Text type="secondary" style={{ fontSize: '12px', display: 'block', marginLeft: '20px' }}>{record.objective}</Text>
                 </div>
             )
         },
@@ -142,13 +145,28 @@ const AdminBookings = () => {
             key: 'status',
             render: status => {
                 let color = 'default';
-                if (status === 'approved' || status === 'picked_up') color = 'processing';
-                else if (status === 'completed' || status === 'returned') color = 'success';
-                else if (status === 'rejected' || status === 'cancelled') color = 'error';
-                else if (status === 'pending') color = 'warning';
+                let icon = <SyncOutlined spin />;
+
+                if (status === 'approved' || status === 'picked_up') {
+                    color = 'processing';
+                    icon = <SyncOutlined />;
+                } else if (status === 'completed' || status === 'returned') {
+                    color = 'success';
+                    icon = <CheckCircleOutlined />;
+                } else if (status === 'rejected' || status === 'cancelled') {
+                    color = 'error';
+                    icon = <CloseCircleOutlined />;
+                } else if (status === 'pending') {
+                    color = 'warning';
+                    icon = <SyncOutlined />;
+                }
 
                 return (
-                    <Tag style={{ borderRadius: '20px', padding: '2px 12px', fontWeight: 600, textTransform: 'capitalize', border: 'none' }} color={color}>
+                    <Tag
+                        icon={icon}
+                        style={{ borderRadius: '20px', padding: '2px 12px', fontWeight: 600, textTransform: 'capitalize', border: 'none' }}
+                        color={color}
+                    >
                         {status}
                     </Tag>
                 );
