@@ -64,7 +64,7 @@ const exportAdvancedReport = (data, filename) => {
 
         // 1. Header
         doc.setFontSize(22);
-        doc.text("รายงานการใช้รถยนต์ (Advanced Report)", 105, 20, { align: 'center' });
+        doc.text("รายงานการใช้รถยนต์ (Vehicle Usage Report)", 105, 20, { align: 'center' });
         doc.setFontSize(14);
         doc.text(`ช่วงวันที่: ${dateRangeString || 'ทั้งหมด'}`, 105, 30, { align: 'center' });
 

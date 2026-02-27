@@ -136,7 +136,7 @@ const AdminReports = () => {
         <div style={{ padding: '24px' }}>
             <Row justify="space-between" align="middle" style={{ marginBottom: 24 }}>
                 <Col>
-                    <Title level={2} style={{ margin: 0 }}>Advanced Reports</Title>
+                    <Title level={2} style={{ margin: 0 }}>รายงานการใช้รถยนต์ (Vehicle Usage Report)</Title>
                 </Col>
                 <Col>
                     <Space size="middle">
