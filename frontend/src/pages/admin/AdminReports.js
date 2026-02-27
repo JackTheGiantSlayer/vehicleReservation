@@ -1,10 +1,11 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Card, Row, Col, Statistic, Table, Typography, Spin, message, DatePicker, Button, Space } from 'antd';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, LineChart, Line } from 'recharts';
 import { DownloadOutlined, UserOutlined, CarOutlined, DashboardOutlined } from '@ant-design/icons';
 import ReportService from '../../services/report.service';
 import moment from 'moment';
 import ExportService from '../../services/export.service';
+import html2canvas from 'html2canvas';
 
 const { Title, Text } = Typography;
 const { RangePicker } = DatePicker;
@@ -14,6 +15,7 @@ const AdminReports = () => {
     const [advancedStats, setAdvancedStats] = useState(null);
     const [loading, setLoading] = useState(true);
     const [dateRange, setDateRange] = useState([null, null]);
+    const chartRef = useRef(null);
 
     const fetchBasicData = async () => {
         try {
@@ -52,8 +54,22 @@ const AdminReports = () => {
         fetchAdvancedData(dates);
     };
 
-    const handleExportPDF = () => {
+    const handleExportPDF = async () => {
         if (!advancedStats) return;
+
+        let chartImage = null;
+        try {
+            if (chartRef.current) {
+                const canvas = await html2canvas(chartRef.current, {
+                    scale: 2, // Higher quality
+                    useCORS: true,
+                    logging: false
+                });
+                chartImage = canvas.toDataURL('image/png');
+            }
+        } catch (error) {
+            console.error("Failed to capture chart image", error);
+        }
 
         const dateRangeString = dateRange[0] && dateRange[1]
             ? `${dateRange[0].format('DD/MM/YYYY')} - ${dateRange[1].format('DD/MM/YYYY')}`
@@ -73,6 +89,7 @@ const AdminReports = () => {
             top_users: advancedStats.summary.top_users.slice(0, 5),
             car_stats: advancedStats.summary.car_stats,
             daily_stats: advancedStats.daily_stats,
+            chartImage,
             dateRangeString
         };
 
@@ -216,18 +233,20 @@ const AdminReports = () => {
 
                     <Row gutter={[24, 24]} style={{ marginBottom: 24 }}>
                         <Col span={24}>
-                            <Card title="Daily Booking Trend" bordered={false} style={{ borderRadius: '12px', boxShadow: '0 2px 8px rgba(0,0,0,0.05)' }}>
-                                <ResponsiveContainer width="100%" height={300}>
-                                    <LineChart data={advancedStats?.daily_stats}>
-                                        <CartesianGrid strokeDasharray="3 3" vertical={false} />
-                                        <XAxis dataKey="date" />
-                                        <YAxis allowDecimals={false} />
-                                        <Tooltip />
-                                        <Legend />
-                                        <Line type="monotone" dataKey="bookings" stroke="#4f46e5" strokeWidth={2} name="Bookings" dot={{ r: 4 }} activeDot={{ r: 6 }} />
-                                    </LineChart>
-                                </ResponsiveContainer>
-                            </Card>
+                            <div ref={chartRef}>
+                                <Card title="Daily Booking Trend" bordered={false} style={{ borderRadius: '12px', boxShadow: '0 2px 8px rgba(0,0,0,0.05)' }}>
+                                    <ResponsiveContainer width="100%" height={300}>
+                                        <LineChart data={advancedStats?.daily_stats}>
+                                            <CartesianGrid strokeDasharray="3 3" vertical={false} />
+                                            <XAxis dataKey="date" />
+                                            <YAxis allowDecimals={false} />
+                                            <Tooltip />
+                                            <Legend />
+                                            <Line type="monotone" dataKey="bookings" stroke="#4f46e5" strokeWidth={2} name="Bookings" dot={{ r: 4 }} activeDot={{ r: 6 }} />
+                                        </LineChart>
+                                    </ResponsiveContainer>
+                                </Card>
+                            </div>
                         </Col>
                     </Row>
 

@@ -55,7 +55,7 @@ const exportPDF = (columns, data, filename) => {
 
 const exportAdvancedReport = (data, filename) => {
     const doc = new jsPDF();
-    const { summary, bookings, top_users, car_stats, daily_stats, dateRangeString } = data;
+    const { summary, bookings, top_users, car_stats, daily_stats, chartImage, dateRangeString } = data;
 
     try {
         doc.addFileToVFS('THSarabunNew.ttf', THSarabunNew_base64);
@@ -74,37 +74,59 @@ const exportAdvancedReport = (data, filename) => {
         doc.setFontSize(12);
         doc.text(`- ระยะทางรวมทั้งหมด: ${summary.total_mileage} กม.`, 20, 55);
         doc.text(`- จำนวนการจองทั้งหมด: ${summary.total_bookings} รายการ`, 20, 65);
-        doc.text(`- สถานะกองยานพาหนะ: พร้ออมใช้ ${summary.active_cars} คัน / ทั้งหมด ${summary.total_cars} คัน`, 20, 75);
+        doc.text(`- สถานะกองยานพาหนะ: พร้อมใช้ ${summary.active_cars} คัน / ทั้งหมด ${summary.total_cars} คัน`, 20, 75);
 
-        // 3. Top 5 Users
+        let currentY = 85;
+
+        // 3. Visual Chart (New!)
+        if (chartImage) {
+            doc.setFontSize(16);
+            doc.text("กราฟแนวโน้มการใช้งาน (Usage Trend Graph)", 14, currentY);
+            // doc.addImage(imageData, format, x, y, width, height)
+            // A4 width is 210mm. Using 180mm with 15mm margins.
+            doc.addImage(chartImage, 'PNG', 15, currentY + 5, 180, 80);
+            currentY += 95;
+        }
+
+        // 4. Top 5 Users
         doc.setFontSize(16);
-        doc.text("ลำดับผู้ใช้งาน (Top 5 Users)", 14, 90);
+        doc.text("ลำดับผู้ใช้งาน (Top 5 Users)", 14, currentY);
         autoTable(doc, {
-            startY: 95,
+            startY: currentY + 5,
             head: [['ชื่อ-นามสกุล', 'จํานวนครั้งที่จอง']],
             body: top_users.map(u => [u.name, u.count]),
             theme: 'striped',
             styles: { font: 'THSarabunNew', fontSize: 10 }
         });
 
-        // 4. Car Usage
-        let finalY = doc.lastAutoTable.finalY + 15;
+        // 5. Car Usage
+        currentY = doc.lastAutoTable.finalY + 15;
+        // Check if we need a new page for Car Usage
+        if (currentY > 250) {
+            doc.addPage();
+            currentY = 20;
+        }
+
         doc.setFontSize(16);
-        doc.text("การใช้รถแยกประเภท (Car Usage & Mileage)", 14, finalY);
+        doc.text("การใช้รถแยกประเภท (Car Usage & Mileage)", 14, currentY);
         autoTable(doc, {
-            startY: finalY + 5,
+            startY: currentY + 5,
             head: [['รุ่นรถ/ทะเบียน', 'การจอง', 'ระยะทางรวม']],
             body: car_stats.map(c => [c.name, c.count, `${c.mileage} กม.`]),
             theme: 'striped',
             styles: { font: 'THSarabunNew', fontSize: 10 }
         });
 
-        // 5. Daily Trend (Mini table representing Graph)
-        finalY = doc.lastAutoTable.finalY + 15;
+        // 6. Daily Trend Data
+        currentY = doc.lastAutoTable.finalY + 15;
+        if (currentY > 230) {
+            doc.addPage();
+            currentY = 20;
+        }
         doc.setFontSize(16);
-        doc.text("แนวโน้มการจองรายวัน (Daily Booking Trend Data)", 14, finalY);
+        doc.text("แนวโน้มการจองรายวัน (Daily Booking Trend Data)", 14, currentY);
         autoTable(doc, {
-            startY: finalY + 5,
+            startY: currentY + 5,
             head: [['วันที่', 'จํานวนการจอง']],
             body: daily_stats.map(d => [d.date, d.bookings]),
             theme: 'grid',
@@ -112,7 +134,7 @@ const exportAdvancedReport = (data, filename) => {
             margin: { left: 14, right: 14 }
         });
 
-        // 6. Detailed Bookings (New Page if needed)
+        // 7. Detailed Bookings (Separate Page)
         doc.addPage();
         doc.setFontSize(18);
         doc.text("ประวัติการจองฉบับเต็ม (Detailed Booking History)", 105, 20, { align: 'center' });
