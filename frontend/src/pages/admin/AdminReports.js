@@ -154,7 +154,7 @@ const AdminReports = () => {
     ];
 
     return (
-        <div style={{ padding: '24px', maxWidth: '1600px', margin: '0 auto' }}>
+        <div style={{ padding: '0 24px 24px 24px', maxWidth: '1600px', margin: '0 auto' }}>
             <Row justify="space-between" align="middle" style={{ marginBottom: '32px' }}>
                 <Col>
                     <Title level={2} style={{ margin: 0, fontWeight: 800, letterSpacing: '-0.5px' }}>
@@ -198,7 +198,7 @@ const AdminReports = () => {
                 <>
                     <Row gutter={[24, 24]} style={{ marginBottom: '32px' }}>
                         <Col xs={24} sm={12} md={8}>
-                            <Card bordered={false} className="premium-card mesh-gradient-primary" style={{ borderRadius: '16px' }}>
+                            <Card bordered={false} className="premium-card mesh-gradient-primary" style={{ borderRadius: '16px', height: '100%' }}>
                                 <Statistic
                                     title={<Text style={{ color: 'rgba(255,255,255,0.85)' }}>ระยะทางรวมทั้งหมด</Text>}
                                     value={advancedStats.summary?.total_mileage || 0}
@@ -206,20 +206,26 @@ const AdminReports = () => {
                                     suffix="กม."
                                     valueStyle={{ color: '#fff', fontWeight: 800 }}
                                 />
+                                <div style={{ marginTop: '4px', fontSize: '12px', color: 'rgba(255,255,255,0.7)' }}>
+                                    ระยะทางสะสมรวม
+                                </div>
                             </Card>
                         </Col>
                         <Col xs={24} sm={12} md={8}>
-                            <Card bordered={false} className="premium-card" style={{ borderRadius: '16px', background: '#fff' }}>
+                            <Card bordered={false} className="premium-card" style={{ borderRadius: '16px', background: '#fff', height: '100%' }}>
                                 <Statistic
                                     title={<Text strong>จำนวนการจองทั้งหมด</Text>}
                                     value={advancedStats.summary?.total_bookings || 0}
                                     suffix="รายการ"
                                     valueStyle={{ color: '#1e293b', fontWeight: 800 }}
                                 />
+                                <div style={{ marginTop: '4px', fontSize: '12px', color: '#64748b' }}>
+                                    ประวัติการทำรายการ
+                                </div>
                             </Card>
                         </Col>
                         <Col xs={24} sm={12} md={8}>
-                            <Card bordered={false} className="premium-card" style={{ borderRadius: '16px', background: '#fff' }}>
+                            <Card bordered={false} className="premium-card" style={{ borderRadius: '16px', background: '#fff', height: '100%' }}>
                                 <Statistic
                                     title={<Text strong>สถานะรถ</Text>}
                                     value={`${advancedStats.summary?.active_cars || 0} / ${advancedStats.summary?.total_cars || 0}`}
