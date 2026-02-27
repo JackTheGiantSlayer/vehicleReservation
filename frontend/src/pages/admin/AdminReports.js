@@ -164,7 +164,7 @@ const AdminReports = () => {
                 <Col>
                     <Space size="middle">
                         <RangePicker
-                            onChange={(dates) => setDateRange(dates)}
+                            onChange={handleDateChange}
                             style={{ borderRadius: '8px', padding: '8px 12px' }}
                         />
                         <Button
