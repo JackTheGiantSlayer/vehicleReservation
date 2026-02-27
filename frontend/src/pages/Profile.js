@@ -1,6 +1,6 @@
 import React, { useState, useContext, useEffect } from 'react';
 import { Card, Form, Input, Button, message, Typography, Row, Col, Divider, Avatar, Space, Tag } from 'antd';
-import { UserOutlined, MailOutlined, PhoneOutlined, LockOutlined, CameraOutlined, ShieldCheckOutlined } from '@ant-design/icons';
+import { UserOutlined, MailOutlined, PhoneOutlined, LockOutlined, CameraOutlined, SafetyCertificateOutlined } from '@ant-design/icons';
 import { AuthContext } from '../context/AuthContext';
 import UserService from '../services/user.service';
 
@@ -90,7 +90,7 @@ const Profile = () => {
 
                         <div style={{ background: '#f8fafc', padding: '16px', borderRadius: '12px', textAlign: 'left' }}>
                             <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '12px' }}>
-                                <ShieldCheckOutlined style={{ color: '#10b981' }} />
+                                <SafetyCertificateOutlined style={{ color: '#10b981' }} />
                                 <Text strong style={{ fontSize: '13px' }}>Verified Member</Text>
                             </div>
                             <Text type="secondary" style={{ fontSize: '12px' }}>
