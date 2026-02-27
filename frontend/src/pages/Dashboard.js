@@ -135,17 +135,31 @@ const Dashboard = () => {
     }
 
     const userMenu = (
-        <Menu items={[
-            { key: 'profile', icon: <SolutionOutlined />, label: <Link to="/dashboard/profile">My Profile</Link> },
-            { type: 'divider' },
-            { key: 'logout', icon: <LogoutOutlined />, label: 'Logout', onClick: handleLogout },
-        ]} />
+        <Menu
+            className="premium-card"
+            style={{ borderRadius: '12px', padding: '8px' }}
+            items={[
+                { key: 'profile', icon: <SolutionOutlined />, label: <Link to="/dashboard/profile">My Profile</Link> },
+                { type: 'divider' },
+                { key: 'logout', icon: <LogoutOutlined />, label: 'Logout', onClick: handleLogout, danger: true },
+            ]}
+        />
     );
 
     const sidebarContent = (
-        <>
-            <div style={{ height: 64, display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', fontSize: '18px', fontWeight: 'bold' }}>
-                {!collapsed || isMobile ? 'Car Booking' : <CarOutlined />}
+        <div style={{ display: 'flex', flexDirection: 'column', height: '100%', background: '#001529' }}>
+            <div style={{
+                height: 64,
+                display: 'flex',
+                alignItems: 'center',
+                padding: '0 24px',
+                color: '#fff',
+                fontSize: '20px',
+                fontWeight: 800,
+                letterSpacing: '-1px'
+            }}>
+                <CarOutlined style={{ marginRight: 12, fontSize: '24px', color: '#6366f1' }} />
+                {(!collapsed || isMobile) && <span>CarBook</span>}
             </div>
             <Menu
                 theme="dark"
@@ -153,8 +167,9 @@ const Dashboard = () => {
                 selectedKeys={[location.pathname]}
                 items={menuItems}
                 onClick={() => isMobile && setDrawerVisible(false)}
+                style={{ border: 'none' }}
             />
-        </>
+        </div>
     );
 
     return (
@@ -184,15 +199,18 @@ const Dashboard = () => {
             <Layout style={{ marginLeft: !isMobile ? (collapsed ? 80 : 200) : 0, transition: 'all 0.2s' }}>
                 <Header style={{
                     padding: '0 24px',
-                    background: '#fff',
+                    background: 'rgba(255, 255, 255, 0.8)',
+                    backdropFilter: 'blur(8px)',
+                    WebkitBackdropFilter: 'blur(8px)',
                     display: 'flex',
                     justifyContent: 'space-between',
                     alignItems: 'center',
-                    boxShadow: '0 2px 8px #f0f1f2',
+                    boxShadow: '0 1px 2px 0 rgba(0, 0, 0, 0.05)',
                     position: 'sticky',
                     top: 0,
-                    zIndex: 1,
-                    width: '100%'
+                    zIndex: 10,
+                    width: '100%',
+                    borderBottom: '1px solid rgba(0,0,0,0.05)'
                 }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
                         {isMobile ? (
@@ -202,15 +220,37 @@ const Dashboard = () => {
                                 type="text"
                                 icon={collapsed ? <MenuUnfoldOutlined /> : <MenuFoldOutlined />}
                                 onClick={() => setCollapsed(!collapsed)}
+                                style={{ fontSize: '16px' }}
                             />
                         )}
-                        <Title level={isMobile ? 5 : 4} style={{ margin: 0 }}>{!isMobile && 'Car Booking System'}</Title>
+                        {!isMobile && (
+                            <Text strong style={{ fontSize: '16px', color: '#1e293b' }}>
+                                Vehicle Reservation System
+                            </Text>
+                        )}
                     </div>
 
                     <div style={{ display: 'flex', alignItems: 'center', gap: isMobile ? '12px' : '24px' }}>
-                        <Dropdown dropdownRender={() => notificationMenu} trigger={['click']} placement="bottomRight">
+                        <Dropdown
+                            dropdownRender={() => (
+                                <div className="premium-card" style={{ background: '#fff', borderRadius: '16px' }}>
+                                    {notificationMenu}
+                                </div>
+                            )}
+                            trigger={['click']}
+                            placement="bottomRight"
+                        >
                             <Badge count={unreadCount} overflowCount={99} size="small" style={{ cursor: 'pointer' }}>
-                                <BellOutlined style={{ fontSize: '20px', padding: '4px' }} />
+                                <div style={{
+                                    padding: '8px',
+                                    borderRadius: '10px',
+                                    background: '#f1f5f9',
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    justifyContent: 'center'
+                                }}>
+                                    <BellOutlined style={{ fontSize: '18px', color: '#64748b' }} />
+                                </div>
                             </Badge>
                         </Dropdown>
 
@@ -222,10 +262,8 @@ const Dashboard = () => {
                         </Dropdown>
                     </div>
                 </Header>
-                <Content style={{ margin: isMobile ? '12px' : '24px' }}>
-                    <div style={{ padding: isMobile ? 12 : 24, background: '#fff', minHeight: 360, borderRadius: '8px' }}>
-                        <Outlet />
-                    </div>
+                <Content style={{ margin: 0, padding: isMobile ? '16px' : '32px' }}>
+                    <Outlet />
                 </Content>
             </Layout>
         </Layout>

@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Calendar, Badge, Modal, List, Tag, Typography, Spin, message, Row, Col, Card, Statistic, Avatar } from 'antd';
+import { Calendar, Badge, Modal, List, Tag, Typography, Spin, message, Row, Col, Card, Statistic, Avatar, Radio, Select, Space } from 'antd';
 import { CalendarOutlined, ClockCircleOutlined, CheckCircleOutlined, SyncOutlined, CarOutlined } from '@ant-design/icons';
 import dayjs from 'dayjs';
 import BookingService from '../services/booking.service';
@@ -100,89 +100,229 @@ const DashboardHome = () => {
     };
 
     return (
-        <div style={{ padding: '4px' }}>
-            <div style={{ marginBottom: '32px' }}>
-                <Title level={4} style={{ marginBottom: '16px' }}>Quick Overview</Title>
-                <Row gutter={[16, 16]}>
+        <div style={{ padding: '24px', maxWidth: '1600px', margin: '0 auto' }}>
+            <div style={{ marginBottom: '40px' }}>
+                <Title level={2} style={{ marginBottom: '24px', fontWeight: 800, letterSpacing: '-0.5px' }}>
+                    Dashboard Overview
+                </Title>
+                <Row gutter={[24, 24]}>
                     <Col xs={24} sm={12} lg={6}>
-                        <Card bordered={false} style={{ background: 'linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%)', borderRadius: '12px' }}>
+                        <Card
+                            bordered={false}
+                            className="premium-card mesh-gradient-primary"
+                            style={{ borderRadius: '16px' }}
+                        >
                             <Statistic
-                                title={<Text style={{ color: 'rgba(255,255,255,0.8)' }}>Total Bookings</Text>}
+                                title={<Text style={{ color: 'rgba(255,255,255,0.85)', fontWeight: 500 }}>Total Bookings</Text>}
                                 value={stats.total}
-                                prefix={<CalendarOutlined style={{ color: '#fff' }} />}
-                                valueStyle={{ color: '#fff', fontWeight: 700 }}
+                                prefix={<CalendarOutlined style={{ color: '#fff', opacity: 0.8 }} />}
+                                valueStyle={{ color: '#fff', fontWeight: 800, fontSize: '28px' }}
                             />
                         </Card>
                     </Col>
                     <Col xs={24} sm={12} lg={6}>
-                        <Card bordered={false} style={{ background: '#fff', borderRadius: '12px', boxShadow: '0 4px 12px rgba(0,0,0,0.05)' }}>
+                        <Card
+                            bordered={false}
+                            className="premium-card"
+                            style={{ borderRadius: '16px', background: '#fff' }}
+                        >
                             <Statistic
-                                title="Active"
+                                title={<Text strong>Active Reservations</Text>}
                                 value={stats.active}
-                                prefix={<SyncOutlined spin style={{ color: '#1890ff' }} />}
-                                valueStyle={{ color: '#1890ff', fontWeight: 700 }}
+                                prefix={<SyncOutlined spin style={{ color: '#6366f1' }} />}
+                                valueStyle={{ color: '#1e293b', fontWeight: 800, fontSize: '28px' }}
                             />
+                            <div style={{ marginTop: '8px', fontSize: '12px', color: '#64748b' }}>
+                                Currently in progress
+                            </div>
                         </Card>
                     </Col>
                     <Col xs={24} sm={12} lg={6}>
-                        <Card bordered={false} style={{ background: '#fff', borderRadius: '12px', boxShadow: '0 4px 12px rgba(0,0,0,0.05)' }}>
+                        <Card
+                            bordered={false}
+                            className="premium-card"
+                            style={{ borderRadius: '16px', background: '#fff' }}
+                        >
                             <Statistic
-                                title="Pending"
+                                title={<Text strong>Waiting Approval</Text>}
                                 value={stats.pending}
-                                prefix={<ClockCircleOutlined style={{ color: '#faad14' }} />}
-                                valueStyle={{ color: '#faad14', fontWeight: 700 }}
+                                prefix={<ClockCircleOutlined style={{ color: '#f59e0b' }} />}
+                                valueStyle={{ color: '#1e293b', fontWeight: 800, fontSize: '28px' }}
                             />
+                            <div style={{ marginTop: '8px', fontSize: '12px', color: '#64748b' }}>
+                                Needs attention
+                            </div>
                         </Card>
                     </Col>
                     <Col xs={24} sm={12} lg={6}>
-                        <Card bordered={false} style={{ background: '#fff', borderRadius: '12px', boxShadow: '0 4px 12px rgba(0,0,0,0.05)' }}>
+                        <Card
+                            bordered={false}
+                            className="premium-card"
+                            style={{ borderRadius: '16px', background: '#fff' }}
+                        >
                             <Statistic
-                                title="Completed"
+                                title={<Text strong>Completed Today</Text>}
                                 value={stats.completed}
-                                prefix={<CheckCircleOutlined style={{ color: '#52c41a' }} />}
-                                valueStyle={{ color: '#52c41a', fontWeight: 700 }}
+                                prefix={<CheckCircleOutlined style={{ color: '#10b981' }} />}
+                                valueStyle={{ color: '#1e293b', fontWeight: 800, fontSize: '28px' }}
                             />
+                            <div style={{ marginTop: '8px', fontSize: '12px', color: '#64748b' }}>
+                                Successfully returned
+                            </div>
                         </Card>
                     </Col>
                 </Row>
             </div>
 
-            <Card title={<><CalendarOutlined /> Car Schedule</>} style={{ borderRadius: '12px', overflow: 'hidden' }} bodyStyle={{ padding: 0 }}>
+            <Card
+                title={
+                    <Space size="small" style={{ fontWeight: 700 }}>
+                        <CalendarOutlined style={{ color: '#6366f1' }} />
+                        <span>Car Schedule</span>
+                    </Space>
+                }
+                className="premium-card"
+                style={{ borderRadius: '20px', border: 'none' }}
+                bodyStyle={{ padding: '20px' }}
+            >
                 <Spin spinning={loading}>
                     <Calendar
                         fullCellRender={fullCellRender}
                         onSelect={onSelect}
-                        style={{ padding: '12px' }}
+                        headerRender={({ value, type, onChange, onTypeChange }) => {
+                            const start = 0;
+                            const end = 12;
+                            const monthOptions = [];
+                            const current = value.clone();
+                            const localeData = value.localeData();
+                            const months = [];
+                            for (let i = 0; i < 12; i++) {
+                                current.month(i);
+                                months.push(localeData.monthsShort(current));
+                            }
+                            for (let i = start; i < end; i++) {
+                                monthOptions.push(
+                                    <Select.Option key={i} value={i} className="month-item">
+                                        {months[i]}
+                                    </Select.Option>,
+                                );
+                            }
+                            const year = value.year();
+                            const month = value.month();
+                            const options = [];
+                            for (let i = year - 10; i < year + 10; i += 1) {
+                                options.push(
+                                    <Select.Option key={i} value={i} className="year-item">
+                                        {i}
+                                    </Select.Option>,
+                                );
+                            }
+                            return (
+                                <div style={{ padding: 8, display: 'flex', justifyContent: 'flex-end', gap: '8px' }}>
+                                    <Select
+                                        size="small"
+                                        dropdownMatchSelectWidth={false}
+                                        className="my-year-select"
+                                        value={year}
+                                        onChange={(newYear) => {
+                                            const now = value.clone().year(newYear);
+                                            onChange(now);
+                                        }}
+                                    >
+                                        {options}
+                                    </Select>
+                                    <Select
+                                        size="small"
+                                        dropdownMatchSelectWidth={false}
+                                        value={month}
+                                        onChange={(newMonth) => {
+                                            const now = value.clone().month(newMonth);
+                                            onChange(now);
+                                        }}
+                                    >
+                                        {monthOptions}
+                                    </Select>
+                                    <Radio.Group
+                                        size="small"
+                                        onChange={(e) => onTypeChange(e.target.value)}
+                                        value={type}
+                                    >
+                                        <Radio.Button value="month">Month</Radio.Button>
+                                        <Radio.Button value="year">Year</Radio.Button>
+                                    </Radio.Group>
+                                </div>
+                            );
+                        }}
                     />
                 </Spin>
             </Card>
 
             <Modal
-                title={`Bookings for ${selectedDate?.format('YYYY-MM-DD')}`}
+                title={
+                    <Space>
+                        <CarOutlined style={{ color: '#6366f1' }} />
+                        <span>Bookings for {selectedDate?.format('DD MMM YYYY')}</span>
+                    </Space>
+                }
                 open={isModalVisible}
                 onCancel={() => setIsModalVisible(false)}
                 footer={null}
                 centered
+                width={600}
+                bodyStyle={{ maxHeight: '70vh', overflowY: 'auto', padding: '12px 24px' }}
             >
                 <List
                     itemLayout="horizontal"
                     dataSource={selectedBookings}
                     renderItem={item => (
-                        <List.Item>
+                        <List.Item style={{ borderBottom: '1px solid #f1f5f9', padding: '20px 0' }}>
                             <List.Item.Meta
-                                avatar={<Avatar style={{ backgroundColor: '#4f46e5' }} icon={<CarOutlined />} />}
-                                title={<Text strong>{item.car_model} <Tag color="blue">{item.car_license}</Tag></Text>}
+                                avatar={
+                                    <div style={{
+                                        width: 48,
+                                        height: 48,
+                                        borderRadius: '12px',
+                                        background: '#f1f5f9',
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        justifyContent: 'center'
+                                    }}>
+                                        <CarOutlined style={{ color: '#6366f1', fontSize: '24px' }} />
+                                    </div>
+                                }
+                                title={
+                                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '4px' }}>
+                                        <Text strong style={{ fontSize: '16px' }}>{item.car_model}</Text>
+                                        <Tag color="blue" style={{ borderRadius: '4px', border: 'none', background: '#e0e7ff', color: '#4338ca' }}>
+                                            {item.car_license}
+                                        </Tag>
+                                    </div>
+                                }
                                 description={
-                                    <>
-                                        <div><Text strong>Destination:</Text> {item.destination}</div>
-                                        <div><Text strong>Time:</Text> {dayjs(item.start_time).toDate().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: false })} - {dayjs(item.end_time).toDate().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: false })}</div>
-                                        <div style={{ marginTop: 8 }}>
-                                            <Tag color={item.status === 'completed' ? 'green' : (item.status === 'approved' ? 'blue' : 'orange')}>
+                                    <Space direction="vertical" size={2} style={{ width: '100%' }}>
+                                        <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                                            <SyncOutlined style={{ fontSize: '12px', color: '#94a3b8' }} />
+                                            <Text type="secondary">{item.destination}</Text>
+                                        </div>
+                                        <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                                            <ClockCircleOutlined style={{ fontSize: '12px', color: '#94a3b8' }} />
+                                            <Text type="secondary">
+                                                {dayjs(item.start_time).format('HH:mm')} - {dayjs(item.end_time).format('HH:mm')}
+                                            </Text>
+                                        </div>
+                                        <div style={{ marginTop: 12, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                                            <Tag
+                                                color={item.status === 'completed' || item.status === 'returned' ? 'success' : (item.status === 'approved' || item.status === 'picked_up' ? 'processing' : 'warning')}
+                                                style={{ borderRadius: '20px', padding: '0 12px' }}
+                                            >
                                                 {item.status.toUpperCase()}
                                             </Tag>
-                                            <Text type="secondary" size="small">by {item.user_name}</Text>
+                                            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                                <Avatar size="small" icon={<UserOutlined />} src={item.user_avatar} />
+                                                <Text type="secondary" style={{ fontSize: '12px' }}>{item.user_name}</Text>
+                                            </div>
                                         </div>
-                                    </>
+                                    </Space>
                                 }
                             />
                         </List.Item>

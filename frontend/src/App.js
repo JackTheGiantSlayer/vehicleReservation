@@ -37,9 +37,19 @@ function App() {
             <ConfigProvider
                 theme={{
                     token: {
-                        colorPrimary: '#4f46e5', // Modern Indigo
-                        borderRadius: 8,
+                        colorPrimary: '#6366f1', // Indigo 500
+                        borderRadius: 12,
                         fontFamily: "'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial",
+                        boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1)',
+                    },
+                    components: {
+                        Card: {
+                            borderRadiusLG: 16,
+                        },
+                        Button: {
+                            borderRadius: 8,
+                            fontWeight: 600,
+                        },
                     },
                 }}
             >
