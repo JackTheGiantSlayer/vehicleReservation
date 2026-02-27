@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Card, Row, Col, Statistic, Table, Typography, Spin, message, DatePicker, Button, Space } from 'antd';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, LineChart, Line } from 'recharts';
-import { DownloadOutlined, UserOutlined, CarOutlined, DashboardOutlined } from '@ant-design/icons';
+import { DownloadOutlined, UserOutlined, CarOutlined, DashboardOutlined, FileExcelOutlined } from '@ant-design/icons';
 import ReportService from '../../services/report.service';
 import moment from 'moment';
 import ExportService from '../../services/export.service';
@@ -94,6 +94,27 @@ const AdminReports = () => {
         };
 
         ExportService.exportAdvancedReport(payload, filename);
+    };
+
+    const handleExportCSV = () => {
+        if (!advancedStats || !advancedStats.bookings) return;
+
+        const filename = dateRange[0] && dateRange[1]
+            ? `bookings_${dateRange[0].format('YYYYMMDD')}_${dateRange[1].format('YYYYMMDD')}.csv`
+            : 'detailed_bookings.csv';
+
+        // Prepare data with localized key names for better readability
+        const csvData = advancedStats.bookings.map(b => ({
+            'วันที่ (Date)': b.start_time,
+            'ผู้ใช้งาน (User)': b.user,
+            'พาหนะ (Vehicle)': b.car,
+            'จุดหมาย (Destination)': b.destination,
+            'วัตถุประสงค์ (Purpose)': b.purpose,
+            'สถานะ (Status)': b.status.toUpperCase(),
+            'ระยะทาง (Mileage)': b.mileage > 0 ? `${b.mileage} km` : '-'
+        }));
+
+        ExportService.exportToCSV(csvData, filename);
     };
 
     const columns = [
@@ -252,6 +273,15 @@ const AdminReports = () => {
 
                     <Card
                         title="Detailed Booking History (Selected Range)"
+                        extra={
+                            <Button
+                                icon={<FileExcelOutlined />}
+                                onClick={handleExportCSV}
+                                disabled={!advancedStats?.bookings?.length}
+                            >
+                                Export CSV
+                            </Button>
+                        }
                         bordered={false}
                         style={{ borderRadius: '12px', boxShadow: '0 2px 8px rgba(0,0,0,0.05)' }}
                     >
