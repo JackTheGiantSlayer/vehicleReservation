@@ -79,28 +79,32 @@ def get_advanced_stats():
 
     bookings = query.all()
 
-    # 1. Top User
+    # 1. Top 10 Users
     user_counts = db.session.query(
         User.full_name,
         func.count(Booking.id).label('count')
     ).join(Booking, User.id == Booking.user_id) \
      .filter(Booking.id.in_([b.id for b in bookings])) \
-     .group_by(User.id).order_by(func.count(Booking.id).desc()).first()
+     .group_by(User.id).order_by(func.count(Booking.id).desc()).limit(10).all()
 
-    # 2. Top Car
-    car_counts = db.session.query(
+    # 2. Vehicle Stats (All cars that were used in this range)
+    car_stats = db.session.query(
         Car.license_plate,
         Car.brand,
         Car.model,
-        func.count(Booking.id).label('count')
+        func.count(Booking.id).label('count'),
+        func.sum(
+            func.case(
+                (Booking.status == 'completed', Booking.end_mileage - Booking.start_mileage),
+                else_=0
+            )
+        ).label('total_mileage')
     ).join(Booking, Car.id == Booking.car_id) \
      .filter(Booking.id.in_([b.id for b in bookings])) \
-     .group_by(Car.id).order_by(func.count(Booking.id).desc()).first()
+     .group_by(Car.id).order_by(func.count(Booking.id).desc()).all()
 
-    # 3. Total Mileage (Only for completed bookings)
-    total_mileage = db.session.query(
-        func.sum(Booking.end_mileage - Booking.start_mileage)
-    ).filter(Booking.id.in_([b.id for b in bookings]), Booking.status == 'completed').scalar() or 0
+    # 3. Total stats
+    total_mileage = sum([c.total_mileage for c in car_stats if c.total_mileage]) or 0
 
     # 4. Daily Stats for Chart
     daily_stats = db.session.query(
@@ -123,13 +127,13 @@ def get_advanced_stats():
             'start_time': b.start_time.strftime('%Y-%m-%d %H:%M'),
             'end_time': b.end_time.strftime('%Y-%m-%d %H:%M'),
             'status': b.status,
-            'mileage': (b.end_mileage - b.start_mileage) if b.status == 'completed' and b.end_mileage else 0
+            'mileage': (b.end_mileage - b.start_mileage) if b.status == 'completed' and b.end_mileage and b.start_mileage else 0
         })
 
     return jsonify({
         'summary': {
-            'top_user': {'name': user_counts.full_name, 'count': user_counts.count} if user_counts else None,
-            'top_car': {'name': f"{car_counts.brand} {car_counts.model} ({car_counts.license_plate})", 'count': car_counts.count} if car_counts else None,
+            'top_users': [{'name': u.full_name, 'count': u.count} for u in user_counts],
+            'car_stats': [{'name': f"{c.brand} {c.model} ({c.license_plate})", 'count': c.count, 'mileage': int(c.total_mileage or 0)} for c in car_stats],
             'total_mileage': int(total_mileage),
             'total_bookings': len(bookings)
         },

@@ -52,26 +52,32 @@ const AdminReports = () => {
     };
 
     const handleExportPDF = () => {
-        if (!advancedStats || !advancedStats.bookings) return;
+        if (!advancedStats) return;
 
-        const pdfColumns = [
+        const filename = dateRange[0] && dateRange[1]
+            ? `report_${dateRange[0].format('YYYYMMDD')}_${dateRange[1].format('YYYYMMDD')}.pdf`
+            : 'vehicle_report.pdf';
+
+        // 1. All Bookings Table
+        const bookingCols = [
             { title: 'Date', dataIndex: 'start_time' },
             { title: 'User', dataIndex: 'user' },
             { title: 'Vehicle', dataIndex: 'car' },
             { title: 'Status', dataIndex: 'status' },
             { title: 'Mileage (km)', dataIndex: 'mileage' }
         ];
+        const bookingData = advancedStats.bookings.map(b => ({ ...b, status: b.status.toUpperCase() }));
 
-        const pdfData = advancedStats.bookings.map(b => ({
-            ...b,
-            status: b.status.toUpperCase(),
-        }));
+        // 2. Car Usage Table
+        const carCols = [
+            { title: 'Vehicle', dataIndex: 'name' },
+            { title: 'Total Bookings', dataIndex: 'count' },
+            { title: 'Total Mileage (km)', dataIndex: 'mileage' }
+        ];
 
-        const filename = dateRange[0] && dateRange[1]
-            ? `report_${dateRange[0].format('YYYYMMDD')}_${dateRange[1].format('YYYYMMDD')}.pdf`
-            : 'vehicle_report.pdf';
-
-        ExportService.exportToPDF(pdfColumns, pdfData, filename);
+        // Custom multi-table PDF or just combined?
+        // Let's use simple export for now but with merged info
+        ExportService.exportToPDF(bookingCols, bookingData, filename);
     };
 
     const columns = [
@@ -95,6 +101,17 @@ const AdminReports = () => {
             key: 'status',
             render: status => status.toUpperCase()
         }
+    ];
+
+    const carColumns = [
+        { title: 'Vehicle', dataIndex: 'name', key: 'name' },
+        { title: 'Bookings', dataIndex: 'count', key: 'count', sorter: (a, b) => a.count - b.count },
+        { title: 'Mileage', dataIndex: 'mileage', key: 'mileage', render: val => `${val} km`, sorter: (a, b) => a.mileage - b.mileage }
+    ];
+
+    const userColumns = [
+        { title: 'User Name', dataIndex: 'name', key: 'name' },
+        { title: 'Total Bookings', dataIndex: 'count', key: 'count' }
     ];
 
     return (
@@ -121,12 +138,12 @@ const AdminReports = () => {
                 </Col>
             </Row>
 
-            {/* Overall Stats Cards */}
+            {/* Summary Row */}
             <Row gutter={[16, 16]} style={{ marginBottom: 24 }}>
-                <Col xs={24} sm={12} md={6}>
+                <Col xs={24} sm={12} md={8}>
                     <Card bordered={false} style={{ borderRadius: '12px', boxShadow: '0 2px 8px rgba(0,0,0,0.05)' }}>
                         <Statistic
-                            title="Total Mileage"
+                            title="Total Distance Covered"
                             value={advancedStats?.summary.total_mileage || 0}
                             suffix="km"
                             prefix={<DashboardOutlined style={{ marginRight: 8, color: '#4f46e5' }} />}
@@ -134,41 +151,19 @@ const AdminReports = () => {
                         />
                     </Card>
                 </Col>
-                <Col xs={24} sm={12} md={6}>
+                <Col xs={24} sm={12} md={8}>
                     <Card bordered={false} style={{ borderRadius: '12px', boxShadow: '0 2px 8px rgba(0,0,0,0.05)' }}>
                         <Statistic
-                            title="Total Bookings"
+                            title="Total Reservations"
                             value={advancedStats?.summary.total_bookings || 0}
                             valueStyle={{ fontWeight: 700 }}
                         />
                     </Card>
                 </Col>
-                <Col xs={24} sm={12} md={6}>
+                <Col xs={24} sm={12} md={8}>
                     <Card bordered={false} style={{ borderRadius: '12px', boxShadow: '0 2px 8px rgba(0,0,0,0.05)' }}>
-                        <Text type="secondary" style={{ fontSize: '14px' }}>Top User</Text>
-                        <div style={{ marginTop: 8 }}>
-                            <Space align="start">
-                                <UserOutlined style={{ fontSize: '20px', color: '#10b981', marginTop: 4 }} />
-                                <div>
-                                    <div style={{ fontWeight: 700, fontSize: '18px' }}>{advancedStats?.summary.top_user?.name || '-'}</div>
-                                    <Text type="secondary" size="small">{advancedStats?.summary.top_user?.count || 0} bookings</Text>
-                                </div>
-                            </Space>
-                        </div>
-                    </Card>
-                </Col>
-                <Col xs={24} sm={12} md={6}>
-                    <Card bordered={false} style={{ borderRadius: '12px', boxShadow: '0 2px 8px rgba(0,0,0,0.05)' }}>
-                        <Text type="secondary" style={{ fontSize: '14px' }}>Top Vehicle</Text>
-                        <div style={{ marginTop: 8 }}>
-                            <Space align="start">
-                                <CarOutlined style={{ fontSize: '20px', color: '#f59e0b', marginTop: 4 }} />
-                                <div>
-                                    <div style={{ fontWeight: 700, fontSize: '18px' }}>{advancedStats?.summary.top_car?.name || '-'}</div>
-                                    <Text type="secondary" size="small">{advancedStats?.summary.top_car?.count || 0} bookings</Text>
-                                </div>
-                            </Space>
-                        </div>
+                        <Statistic title="Total Active Cars" value={basicStats?.total_cars} />
+                        <Text type="secondary" size="small">Total fleet size across system</Text>
                     </Card>
                 </Col>
             </Row>
@@ -180,8 +175,43 @@ const AdminReports = () => {
             ) : (
                 <>
                     <Row gutter={[24, 24]} style={{ marginBottom: 24 }}>
-                        <Col xs={24} lg={16}>
-                            <Card title="Usage Trend" bordered={false} style={{ borderRadius: '12px', boxShadow: '0 2px 8px rgba(0,0,0,0.05)' }}>
+                        {/* Car Usage Statistics */}
+                        <Col xs={24} xl={16}>
+                            <Card
+                                title={<Space><CarOutlined /><span>Car Usage & Mileage</span></Space>}
+                                bordered={false}
+                                style={{ borderRadius: '12px', boxShadow: '0 2px 8px rgba(0,0,0,0.05)' }}
+                            >
+                                <Table
+                                    dataSource={advancedStats?.summary.car_stats}
+                                    columns={carColumns}
+                                    rowKey="name"
+                                    pagination={{ pageSize: 5 }}
+                                    size="small"
+                                />
+                            </Card>
+                        </Col>
+                        {/* Top Users */}
+                        <Col xs={24} xl={8}>
+                            <Card
+                                title={<Space><UserOutlined /><span>Top 10 Users</span></Space>}
+                                bordered={false}
+                                style={{ borderRadius: '12px', boxShadow: '0 2px 8px rgba(0,0,0,0.05)' }}
+                            >
+                                <Table
+                                    dataSource={advancedStats?.summary.top_users}
+                                    columns={userColumns}
+                                    rowKey="name"
+                                    pagination={false}
+                                    size="small"
+                                />
+                            </Card>
+                        </Col>
+                    </Row>
+
+                    <Row gutter={[24, 24]} style={{ marginBottom: 24 }}>
+                        <Col span={24}>
+                            <Card title="Daily Booking Trend" bordered={false} style={{ borderRadius: '12px', boxShadow: '0 2px 8px rgba(0,0,0,0.05)' }}>
                                 <ResponsiveContainer width="100%" height={300}>
                                     <LineChart data={advancedStats?.daily_stats}>
                                         <CartesianGrid strokeDasharray="3 3" vertical={false} />
@@ -194,18 +224,10 @@ const AdminReports = () => {
                                 </ResponsiveContainer>
                             </Card>
                         </Col>
-                        <Col xs={24} lg={8}>
-                            <Card title="Quick Overview" bordered={false} style={{ borderRadius: '12px', boxShadow: '0 2px 8px rgba(0,0,0,0.05)' }}>
-                                <Statistic title="Fleet Size" value={basicStats?.total_cars} />
-                                <div style={{ marginTop: 20 }}>
-                                    <Text type="secondary">System data as of today.</Text>
-                                </div>
-                            </Card>
-                        </Col>
                     </Row>
 
                     <Card
-                        title="Bookings in Range"
+                        title="Detailed Booking History (Selected Range)"
                         bordered={false}
                         style={{ borderRadius: '12px', boxShadow: '0 2px 8px rgba(0,0,0,0.05)' }}
                     >
