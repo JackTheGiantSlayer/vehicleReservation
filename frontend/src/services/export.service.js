@@ -96,7 +96,8 @@ const exportAdvancedReport = (data, filename) => {
             head: [['ชื่อ-นามสกุล', 'จํานวนครั้งที่จอง']],
             body: top_users.map(u => [u.name, u.count]),
             theme: 'striped',
-            styles: { font: 'THSarabunNew', fontSize: 10 }
+            styles: { font: 'THSarabunNew', fontSize: 10 },
+            headStyles: { font: 'THSarabunNew', fontSize: 11 }
         });
 
         // 5. Car Usage
@@ -114,7 +115,8 @@ const exportAdvancedReport = (data, filename) => {
             head: [['รุ่นรถ/ทะเบียน', 'การจอง', 'ระยะทางรวม']],
             body: car_stats.map(c => [c.name, c.count, `${c.mileage} กม.`]),
             theme: 'striped',
-            styles: { font: 'THSarabunNew', fontSize: 10 }
+            styles: { font: 'THSarabunNew', fontSize: 10 },
+            headStyles: { font: 'THSarabunNew', fontSize: 11 }
         });
 
         // 6. Daily Trend Data
@@ -131,6 +133,7 @@ const exportAdvancedReport = (data, filename) => {
             body: daily_stats.map(d => [d.date, d.bookings]),
             theme: 'grid',
             styles: { font: 'THSarabunNew', fontSize: 9 },
+            headStyles: { font: 'THSarabunNew', fontSize: 10 },
             margin: { left: 14, right: 14 }
         });
 
@@ -149,7 +152,8 @@ const exportAdvancedReport = (data, filename) => {
                 b.status.toUpperCase(),
                 b.mileage > 0 ? `${b.mileage} กม.` : '-'
             ]),
-            styles: { font: 'THSarabunNew', fontSize: 9 }
+            styles: { font: 'THSarabunNew', fontSize: 9 },
+            headStyles: { font: 'THSarabunNew', fontSize: 10 }
         });
 
         doc.save(filename);
